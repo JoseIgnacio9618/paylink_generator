@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+:root {
+  --background: #edf2f7;
+  --foreground: #182430;
+  --surface: #f8fbff;
+  --surface-strong: #e6edf5;
+  --border: rgba(24, 36, 48, 0.12);
+  --muted: #667689;
+  --accent: #305f8d;
+  --accent-strong: #214566;
+  --accent-warm: #b68a57;
+  --shadow: 0 24px 80px rgba(24, 36, 48, 0.1);
+}
+
+:root[data-theme="dark"] {
+  --background: #0f1720;
+  --foreground: #ebf1f7;
+  --surface: #17222d;
+  --surface-strong: #223140;
+  --border: rgba(235, 241, 247, 0.12);
+  --muted: #97a7ba;
+  --accent: #7da4c8;
+  --accent-strong: #5f86aa;
+  --accent-warm: #c7a06d;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-warm: var(--accent-warm);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background-color: var(--background);
+}
+
+body {
+  position: relative;
+  min-height: 100%;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), sans-serif;
+  isolation: isolate;
+}
+
+:root[data-theme="dark"] body {
+  background-color: var(--background);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(182, 138, 87, 0.16), transparent 0 22rem),
+    radial-gradient(circle at 86% 10%, rgba(48, 95, 141, 0.14), transparent 0 24rem),
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.54), transparent 0 22rem),
+    linear-gradient(180deg, #f8fbff 0%, #edf2f7 44%, #e3ebf3 100%);
+}
+
+:root[data-theme="dark"] body::before {
+  background:
+    radial-gradient(circle at 14% 12%, rgba(199, 160, 109, 0.1), transparent 0 22rem),
+    radial-gradient(circle at 84% 10%, rgba(125, 164, 200, 0.13), transparent 0 24rem),
+    radial-gradient(circle at 50% 30%, rgba(44, 63, 84, 0.26), transparent 0 22rem),
+    linear-gradient(180deg, #0f1720 0%, #121c26 44%, #16222d 100%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.45;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 34, 38, 0.025) 1px, transparent 1px);
+  background-size: 100% 96px, 96px 100%;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.28));
+}
+
+:root[data-theme="dark"] body::after {
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+}
+
+::selection {
+  background: rgba(48, 95, 141, 0.18);
+}
+
+:root[data-theme="dark"] ::selection {
+  background: rgba(125, 164, 200, 0.24);
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+button {
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(102, 118, 137, 0.82);
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: rgba(151, 167, 186, 0.76);
+}
