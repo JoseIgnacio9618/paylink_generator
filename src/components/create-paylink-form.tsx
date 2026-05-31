@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SUPPORTED_PAYMENT_METHODS } from "@/lib/constants";
@@ -18,6 +19,17 @@ type Notice = {
   tone: "success" | "error";
   text: string;
 } | null;
+
+type CreationSummary = {
+  requestedPaymentMethods: string[];
+  availablePaymentMethods: string[];
+  omittedPaymentMethods: Array<{
+    method: string;
+    reason: string;
+  }>;
+  historyHref: string;
+  message: string;
+};
 
 export function CreatePaylinkForm({
   settings,
@@ -44,6 +56,7 @@ export function CreatePaylinkForm({
     allowedPaymentMethods: initialAllowedPaymentMethods,
   });
   const [notice, setNotice] = useState<Notice>(null);
+  const [creationSummary, setCreationSummary] = useState<CreationSummary | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const removedDefaultMethods =
     availablePaymentMethods.length > 0
@@ -80,12 +93,17 @@ export function CreatePaylinkForm({
         customerPhone: "",
         allowedPaymentMethods: initialAllowedPaymentMethods,
       });
-      setNotice({
-        tone: "success",
-        text:
-          result.warning ??
-          "Link de pago creado correctamente y preparado en MONEI con los métodos elegidos.",
-      });
+      setCreationSummary(
+        result.creationSummary ?? {
+          requestedPaymentMethods: form.allowedPaymentMethods,
+          availablePaymentMethods: form.allowedPaymentMethods,
+          omittedPaymentMethods: [],
+          historyHref: "/historial",
+          message:
+            result.warning ??
+            "Link de pago creado correctamente y preparado en MONEI con los métodos elegidos.",
+        },
+      );
       startTransition(() => router.refresh());
     } catch (error) {
       setNotice({
@@ -118,6 +136,9 @@ export function CreatePaylinkForm({
             {accountSnapshot.paymentMethods.length > 0
               ? formatPaymentMethodList(accountSnapshot.paymentMethods)
               : "ninguno compatible con esta app"}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            La disponibilidad final se recalcula cuando MONEI crea el checkout, así que puede variar según el importe, la moneda o el país.
           </p>
           {removedDefaultMethods.length > 0 ? (
             <p className="mt-2 text-sm leading-6 text-amber-700">
@@ -256,6 +277,11 @@ export function CreatePaylinkForm({
           {isCreating ? "Creando..." : "Crear link y registrar pago"}
         </button>
       </form>
+
+      <CreationResultModal
+        summary={creationSummary}
+        onClose={() => setCreationSummary(null)}
+      />
     </SectionCard>
   );
 }
@@ -273,4 +299,94 @@ function resolveInitialPaymentMethods(preferred: string[], available: string[]) 
 
   const matched = preferred.filter((method) => available.includes(method));
   return matched.length > 0 ? matched : [...available];
+}
+
+function CreationResultModal({
+  summary,
+  onClose,
+}: {
+  summary: CreationSummary | null;
+  onClose: () => void;
+}) {
+  if (!summary) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
+      <div className="w-full max-w-2xl rounded-[2rem] border border-border bg-surface p-6 shadow-[0_28px_90px_rgba(15,23,42,0.28)]">
+        <p className="font-mono text-xs uppercase tracking-[0.24em] text-accent">
+          Pago creado
+        </p>
+        <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+          El checkout ya está listo
+        </h3>
+        <p className="mt-3 text-sm leading-6 text-muted">{summary.message}</p>
+
+        <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-border bg-surface-strong/80 p-4 md:grid-cols-2">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
+              Pediste
+            </p>
+            <p className="mt-2 text-sm leading-6 text-foreground">
+              {summary.requestedPaymentMethods.length > 0
+                ? formatPaymentMethodList(summary.requestedPaymentMethods)
+                : "Sin métodos seleccionados"}
+            </p>
+          </div>
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
+              Quedó disponible
+            </p>
+            <p className="mt-2 text-sm leading-6 text-foreground">
+              {summary.availablePaymentMethods.length > 0
+                ? formatPaymentMethodList(summary.availablePaymentMethods)
+                : "MONEI no dejó métodos disponibles en el checkout final"}
+            </p>
+          </div>
+        </div>
+
+        {summary.omittedPaymentMethods.length > 0 ? (
+          <div className="mt-6 space-y-3">
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-700">
+              Métodos omitidos
+            </p>
+            {summary.omittedPaymentMethods.map((item) => (
+              <div
+                key={item.method}
+                className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-3"
+              >
+                <p className="text-sm font-semibold text-amber-900">
+                  {formatPaymentMethodLabel(item.method)}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-amber-800">{item.reason}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p className="text-sm leading-6 text-emerald-800">
+              MONEI ha conservado todos los métodos que marcaste al crear este checkout.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-accent hover:text-accent"
+          >
+            Seguir aquí
+          </button>
+          <Link
+            href={summary.historyHref}
+            className="inline-flex items-center justify-center rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white hover:bg-accent-strong"
+          >
+            Ir al histórico
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }

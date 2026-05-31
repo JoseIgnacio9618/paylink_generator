@@ -103,6 +103,7 @@ export async function fetchPaymentStatus(settings: SettingsRecord, paymentId: st
 export async function getCheckoutSnapshot(
   settings: SettingsRecord,
   input?: {
+    paymentId?: string;
     amountCents?: number;
     currency?: string;
     countryCode?: string;
@@ -110,12 +111,14 @@ export async function getCheckoutSnapshot(
 ): Promise<MoneiCheckoutSnapshot> {
   const amountCents = input?.amountCents ?? 100;
   const currency = input?.currency ?? settings.defaultCurrency ?? "EUR";
-  const response = await getClient(settings).paymentMethods.getAllowed(
-    undefined,
-    amountCents,
-    currency,
-    input?.countryCode,
-  );
+  const response = input?.paymentId
+    ? await getClient(settings).paymentMethods.getAllowed(input.paymentId)
+    : await getClient(settings).paymentMethods.getAllowed(
+        undefined,
+        amountCents,
+        currency,
+        input?.countryCode,
+      );
 
   return {
     accountId: response.accountId ?? settings.moneiAccountId ?? "",
