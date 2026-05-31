@@ -1,13 +1,24 @@
 import { OverviewPage } from "@/components/overview-page";
+import { requireAuthenticatedUser } from "@/lib/auth";
 import { listPaylinks } from "@/lib/paylinks";
 import { getConfigurationWarnings, getSettings } from "@/lib/settings";
+import { getVisiblePaylinkOwnerIds } from "@/lib/users";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const currentUser = await requireAuthenticatedUser();
   const settings = getSettings();
-  const paylinks = listPaylinks();
-  const warnings = getConfigurationWarnings(settings);
+  const paylinks = listPaylinks({ ownerUserIds: getVisiblePaylinkOwnerIds(currentUser) });
+  const warnings =
+    currentUser.role === "superadmin" ? getConfigurationWarnings(settings) : [];
 
-  return <OverviewPage settings={settings} paylinks={paylinks} warnings={warnings} />;
+  return (
+    <OverviewPage
+      settings={settings}
+      currentUser={currentUser}
+      paylinks={paylinks}
+      warnings={warnings}
+    />
+  );
 }

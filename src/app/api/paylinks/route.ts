@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { createHostedPayment, getCheckoutSnapshot } from "@/lib/monei";
 import { insertPaylink } from "@/lib/paylinks";
 import { getSettings } from "@/lib/settings";
@@ -57,6 +58,12 @@ function buildOmittedMethodReason(input: {
 
 export async function POST(request: Request) {
   try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
+    }
+
     const body = await request.json();
     const parsed = createPaylinkInputSchema.safeParse({
       ...body,
@@ -183,6 +190,7 @@ export async function POST(request: Request) {
 
     const paylink = insertPaylink({
       id: localPaylinkId,
+      ownerUserId: currentUser.id,
       orderId,
       title: parsed.data.title,
       description: parsed.data.description,

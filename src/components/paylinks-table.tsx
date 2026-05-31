@@ -198,6 +198,12 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                         <p className="text-sm leading-6 text-muted">
                           {paylink.description || "Sin descripción"}
                         </p>
+                        {paylink.ownerDisplayName ? (
+                          <p className="text-xs text-muted">
+                            Propietario: {paylink.ownerDisplayName}
+                            {paylink.ownerUsername ? ` (@${paylink.ownerUsername})` : ""}
+                          </p>
+                        ) : null}
                         <p className="font-mono text-xs text-muted">{paylink.moneiPaymentId}</p>
                       </div>
                     </td>

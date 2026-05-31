@@ -58,3 +58,11 @@ export function getSeedSettings(): Omit<SettingsRecord, "createdAt" | "updatedAt
       ].join("\n"),
   };
 }
+
+export function getSeedSuperadmin() {
+  return {
+    username: (process.env.SUPERADMIN_USERNAME ?? "admin").trim().toLowerCase(),
+    displayName: (process.env.SUPERADMIN_DISPLAY_NAME ?? "Superadministrador").trim(),
+    password: process.env.SUPERADMIN_PASSWORD ?? "admin12345",
+  };
+}

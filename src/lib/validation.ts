@@ -2,6 +2,7 @@ import { z } from "zod";
 import { SUPPORTED_PAYMENT_METHODS } from "@/lib/constants";
 
 const paymentMethodSchema = z.enum(SUPPORTED_PAYMENT_METHODS);
+const userRoleSchema = z.enum(["superadmin", "user"]);
 
 export const settingsInputSchema = z.object({
   appName: z.string().trim().min(1),
@@ -37,4 +38,27 @@ export const createPaylinkInputSchema = z.object({
   customerEmail: z.string().trim().optional().default(""),
   customerPhone: z.string().trim().optional().default(""),
   allowedPaymentMethods: z.array(paymentMethodSchema).min(1),
+});
+
+export const loginInputSchema = z.object({
+  username: z.string().trim().min(1),
+  password: z.string().min(1),
+});
+
+export const createUserInputSchema = z.object({
+  username: z.string().trim().min(3),
+  displayName: z.string().trim().min(1),
+  password: z.string().min(8),
+  role: userRoleSchema,
+  active: z.boolean(),
+  canViewAllPayments: z.boolean(),
+});
+
+export const updateUserInputSchema = z.object({
+  username: z.string().trim().min(3),
+  displayName: z.string().trim().min(1),
+  password: z.string().min(8).optional().or(z.literal("")),
+  role: userRoleSchema,
+  active: z.boolean(),
+  canViewAllPayments: z.boolean(),
 });

@@ -1,26 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { APP_NAV_ITEMS } from "@/lib/navigation";
+import type { UserRecord } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+function isItemActive(itemHref: string, pathname: string) {
+  return pathname === itemHref || pathname.startsWith(`${itemHref}/`);
+}
 
 export function AppShell({
   appName,
+  currentUser,
   children,
 }: {
   appName: string;
+  currentUser: UserRecord;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const navItems = useMemo(
+    () => APP_NAV_ITEMS.filter((item) => !item.superadminOnly || currentUser.role === "superadmin"),
+    [currentUser.role],
+  );
 
   const currentItem = useMemo(
-    () => APP_NAV_ITEMS.find((item) => item.href === pathname) ?? APP_NAV_ITEMS[0],
-    [pathname],
+    () => navItems.find((item) => isItemActive(item.href, pathname)) ?? navItems[0],
+    [navItems, pathname],
   );
+
+  async function signOut() {
+    setIsSigningOut(true);
+
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh();
+    } finally {
+      setIsSigningOut(false);
+    }
+  }
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
@@ -54,11 +79,19 @@ export function AppShell({
               <p className="font-mono text-xs uppercase tracking-[0.26em] text-accent">
                 {appName}
               </p>
-              <p className="truncate text-sm text-muted">{currentItem.description}</p>
+              <p className="truncate text-sm text-muted">
+                {currentItem?.description ?? "Panel privado"}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="hidden rounded-full border border-border bg-surface/85 px-4 py-2 text-right shadow-[0_10px_30px_rgba(18,34,38,0.08)] sm:block">
+              <p className="text-sm font-semibold text-foreground">{currentUser.displayName}</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                {currentUser.role}
+              </p>
+            </div>
             <div className="relative">
               <button
                 type="button"
@@ -81,8 +114,8 @@ export function AppShell({
                     </p>
                   </div>
                   <div className="p-2">
-                    {APP_NAV_ITEMS.map((item, index) => {
-                      const active = item.href === pathname;
+                    {navItems.map((item, index) => {
+                      const active = isItemActive(item.href, pathname);
 
                       return (
                         <Link
@@ -123,6 +156,14 @@ export function AppShell({
               ) : null}
             </div>
 
+            <button
+              type="button"
+              onClick={signOut}
+              disabled={isSigningOut}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/85 px-4 py-2 text-sm font-medium text-foreground shadow-[0_10px_30px_rgba(18,34,38,0.08)] hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSigningOut ? "Saliendo..." : "Salir"}
+            </button>
             <ThemeToggle />
           </div>
         </div>

@@ -24,6 +24,31 @@ export interface SettingsRecord {
   updatedAt: string;
 }
 
+export type UserRole = "superadmin" | "user";
+
+export interface UserRecord {
+  id: string;
+  username: string;
+  displayName: string;
+  role: UserRole;
+  active: boolean;
+  canViewAllPayments: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserSummary extends UserRecord {
+  paylinksCount: number;
+}
+
+export interface PaginatedUsersResult {
+  items: UserSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface MoneiCheckoutSnapshot {
   accountId: string;
   merchantName: string;
@@ -34,6 +59,9 @@ export interface MoneiCheckoutSnapshot {
 
 export interface PaylinkRecord {
   id: string;
+  ownerUserId: string;
+  ownerDisplayName: string;
+  ownerUsername: string;
   orderId: string;
   title: string;
   description: string;

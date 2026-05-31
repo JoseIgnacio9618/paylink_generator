@@ -1,3 +1,4 @@
+import { requireSuperadminUser } from "@/lib/auth";
 import { PageFrame } from "@/components/panel-ui";
 import { SettingsForm } from "@/components/settings-form";
 import { getCheckoutSnapshot } from "@/lib/monei";
@@ -6,6 +7,7 @@ import { getSettings } from "@/lib/settings";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
+  await requireSuperadminUser();
   const settings = getSettings();
   const accountSnapshot = settings.moneiApiKey
     ? await getCheckoutSnapshot(settings).catch(() => null)

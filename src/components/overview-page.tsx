@@ -2,18 +2,23 @@ import Link from "next/link";
 import { PageFrame, SectionCard, SectionHeading, SummaryCard } from "@/components/panel-ui";
 import { APP_NAV_ITEMS } from "@/lib/navigation";
 import { getPaylinkStats } from "@/lib/stats";
-import type { PaylinkRecord, SettingsRecord } from "@/lib/types";
+import type { PaylinkRecord, SettingsRecord, UserRecord } from "@/lib/types";
 
 export function OverviewPage({
   settings,
+  currentUser,
   paylinks,
   warnings,
 }: {
   settings: SettingsRecord;
+  currentUser: UserRecord;
   paylinks: PaylinkRecord[];
   warnings: string[];
 }) {
   const stats = getPaylinkStats(paylinks);
+  const navItems = APP_NAV_ITEMS.filter(
+    (item) => item.href !== "/" && (!item.superadminOnly || currentUser.role === "superadmin"),
+  );
 
   return (
     <PageFrame
@@ -37,7 +42,7 @@ export function OverviewPage({
           />
 
           <div className="mt-6 grid gap-3">
-            {APP_NAV_ITEMS.filter((item) => item.href !== "/").map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

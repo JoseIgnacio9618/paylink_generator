@@ -5,6 +5,9 @@ import { nowIso, parseJsonArray } from "@/lib/utils";
 
 type PaylinkRow = {
   id: string;
+  owner_user_id: string;
+  owner_display_name: string;
+  owner_username: string;
   order_id: string;
   title: string;
   description: string;
@@ -29,36 +32,52 @@ type PaylinkRow = {
   updated_at: string;
 };
 
+const PAYLINK_SELECT_FIELDS = `
+  paylinks.*,
+  COALESCE(users.display_name, '') as owner_display_name,
+  COALESCE(users.username, '') as owner_username
+`;
+
+const PAYLINK_FROM_CLAUSE = `
+  FROM paylinks
+  LEFT JOIN users ON users.id = paylinks.owner_user_id
+`;
+
 const PAYLINK_SEARCH_COLUMNS = [
-  "id",
-  "order_id",
-  "title",
-  "description",
-  "currency",
-  "recipient_email",
-  "customer_name",
-  "customer_email",
-  "customer_phone",
-  "allowed_payment_methods",
-  "monei_payment_id",
-  "monei_status",
-  "monei_status_code",
-  "payment_url",
-  "next_action_type",
-  "last_payload",
-  "notification_sent_at",
-  "notification_recipients",
-  "notification_error",
-  "paid_at",
-  "created_at",
-  "updated_at",
-  "CAST(amount_cents AS TEXT)",
-  "printf('%.2f', amount_cents / 100.0)",
+  "paylinks.id",
+  "paylinks.order_id",
+  "paylinks.title",
+  "paylinks.description",
+  "paylinks.currency",
+  "paylinks.recipient_email",
+  "paylinks.customer_name",
+  "paylinks.customer_email",
+  "paylinks.customer_phone",
+  "paylinks.allowed_payment_methods",
+  "paylinks.monei_payment_id",
+  "paylinks.monei_status",
+  "paylinks.monei_status_code",
+  "paylinks.payment_url",
+  "paylinks.next_action_type",
+  "paylinks.last_payload",
+  "paylinks.notification_sent_at",
+  "paylinks.notification_recipients",
+  "paylinks.notification_error",
+  "paylinks.paid_at",
+  "paylinks.created_at",
+  "paylinks.updated_at",
+  "users.display_name",
+  "users.username",
+  "CAST(paylinks.amount_cents AS TEXT)",
+  "printf('%.2f', paylinks.amount_cents / 100.0)",
 ] as const;
 
 function mapPaylinkRow(row: PaylinkRow): PaylinkRecord {
   return {
     id: row.id,
+    ownerUserId: row.owner_user_id,
+    ownerDisplayName: row.owner_display_name,
+    ownerUsername: row.owner_username,
     orderId: row.order_id,
     title: row.title,
     description: row.description,
@@ -84,10 +103,32 @@ function mapPaylinkRow(row: PaylinkRow): PaylinkRecord {
   };
 }
 
-export function listPaylinks() {
+function buildOwnerScopeCondition(ownerUserIds?: string[]) {
+  if (!ownerUserIds) {
+    return { clause: "", params: [] as string[] };
+  }
+
+  if (ownerUserIds.length === 0) {
+    return { clause: "WHERE 1 = 0", params: [] as string[] };
+  }
+
+  return {
+    clause: `WHERE paylinks.owner_user_id IN (${ownerUserIds.map(() => "?").join(", ")})`,
+    params: ownerUserIds,
+  };
+}
+
+export function listPaylinks(input?: { ownerUserIds?: string[] }) {
+  const { clause, params } = buildOwnerScopeCondition(input?.ownerUserIds);
   const rows = db
-    .prepare("SELECT * FROM paylinks ORDER BY datetime(created_at) DESC")
-    .all() as PaylinkRow[];
+    .prepare(`
+      SELECT ${PAYLINK_SELECT_FIELDS}
+      ${PAYLINK_FROM_CLAUSE}
+      ${clause}
+      ORDER BY datetime(paylinks.created_at) DESC
+    `)
+    .all(...params) as PaylinkRow[];
+
   return rows.map(mapPaylinkRow);
 }
 
@@ -95,14 +136,19 @@ export function searchPaylinks(input: {
   query?: string;
   page?: number;
   pageSize?: number;
+  ownerUserIds?: string[];
 }): PaginatedPaylinksResult {
   const query = (input.query ?? "").trim();
   const pageSize = clampPageSize(input.pageSize ?? 25);
   const requestedPage = Math.max(1, Math.trunc(input.page ?? 1));
-  const { whereClause, params } = buildPaylinkSearch(query);
+  const { whereClause, params } = buildPaylinkSearch(query, input.ownerUserIds);
 
   const totalRow = db
-    .prepare(`SELECT COUNT(*) as total FROM paylinks ${whereClause}`)
+    .prepare(`
+      SELECT COUNT(*) as total
+      ${PAYLINK_FROM_CLAUSE}
+      ${whereClause}
+    `)
     .get(...params) as { total: number };
   const total = totalRow.total;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -111,10 +157,10 @@ export function searchPaylinks(input: {
 
   const rows = db
     .prepare(`
-      SELECT *
-      FROM paylinks
+      SELECT ${PAYLINK_SELECT_FIELDS}
+      ${PAYLINK_FROM_CLAUSE}
       ${whereClause}
-      ORDER BY datetime(created_at) DESC
+      ORDER BY datetime(paylinks.created_at) DESC
       LIMIT ? OFFSET ?
     `)
     .all(...params, pageSize, offset) as PaylinkRow[];
@@ -129,22 +175,46 @@ export function searchPaylinks(input: {
   };
 }
 
-export function getPaylinkById(id: string) {
-  const row = db.prepare("SELECT * FROM paylinks WHERE id = ?").get(id) as
-    | PaylinkRow
-    | undefined;
+export function getPaylinkById(id: string, ownerUserIds?: string[]) {
+  const params = [id];
+  let whereClause = "WHERE paylinks.id = ?";
+
+  if (ownerUserIds) {
+    if (ownerUserIds.length === 0) {
+      return null;
+    }
+
+    whereClause += ` AND paylinks.owner_user_id IN (${ownerUserIds.map(() => "?").join(", ")})`;
+    params.push(...ownerUserIds);
+  }
+
+  const row = db
+    .prepare(`
+      SELECT ${PAYLINK_SELECT_FIELDS}
+      ${PAYLINK_FROM_CLAUSE}
+      ${whereClause}
+      LIMIT 1
+    `)
+    .get(...params) as PaylinkRow | undefined;
+
   return row ? mapPaylinkRow(row) : null;
 }
 
 export function getPaylinkByMoneiPaymentId(moneiPaymentId: string) {
-  const row = db.prepare("SELECT * FROM paylinks WHERE monei_payment_id = ?").get(
-    moneiPaymentId,
-  ) as PaylinkRow | undefined;
+  const row = db
+    .prepare(`
+      SELECT ${PAYLINK_SELECT_FIELDS}
+      ${PAYLINK_FROM_CLAUSE}
+      WHERE paylinks.monei_payment_id = ?
+      LIMIT 1
+    `)
+    .get(moneiPaymentId) as PaylinkRow | undefined;
   return row ? mapPaylinkRow(row) : null;
 }
 
 export function insertPaylink(input: {
   id: string;
+  ownerUserId: string;
   orderId: string;
   title: string;
   description: string;
@@ -161,20 +231,21 @@ export function insertPaylink(input: {
 
   db.prepare(`
     INSERT INTO paylinks (
-      id, order_id, title, description, amount_cents, currency, recipient_email,
+      id, owner_user_id, order_id, title, description, amount_cents, currency, recipient_email,
       customer_name, customer_email, customer_phone, allowed_payment_methods,
       monei_payment_id, monei_status, monei_status_code, payment_url,
       next_action_type, last_payload, notification_sent_at,
       notification_recipients, notification_error, paid_at, created_at, updated_at
     )
     VALUES (
-      @id, @orderId, @title, @description, @amountCents, @currency, @recipientEmail,
+      @id, @ownerUserId, @orderId, @title, @description, @amountCents, @currency, @recipientEmail,
       @customerName, @customerEmail, @customerPhone, @allowedPaymentMethods,
       @moneiPaymentId, @moneiStatus, @moneiStatusCode, @paymentUrl, @nextActionType,
       @lastPayload, '', '[]', '', @paidAt, @createdAt, @updatedAt
     )
   `).run({
     id: input.id,
+    ownerUserId: input.ownerUserId,
     orderId: input.orderId,
     title: input.title,
     description: input.description,
@@ -226,8 +297,7 @@ export function applyPaymentUpdate(
   }
 
   const now = nowIso();
-  const paidAt =
-    payment.status === "SUCCEEDED" ? existing.paidAt || now : existing.paidAt;
+  const paidAt = payment.status === "SUCCEEDED" ? existing.paidAt || now : existing.paidAt;
 
   db.prepare(`
     UPDATE paylinks
@@ -278,13 +348,30 @@ export function markNotificationResult(
   return getPaylinkById(paylinkId)!;
 }
 
-function buildPaylinkSearch(query: string) {
+function buildPaylinkSearch(query: string, ownerUserIds?: string[]) {
+  const ownerScope = buildOwnerScopeCondition(ownerUserIds);
+
   if (!query) {
-    return { whereClause: "", params: [] as string[] };
+    return {
+      whereClause: ownerScope.clause,
+      params: ownerScope.params,
+    };
   }
 
-  const terms = [...new Set(query.toLowerCase().split(/\s+/).map((term) => term.trim()).filter(Boolean))];
-  const params: string[] = [];
+  const terms = [
+    ...new Set(
+      query
+        .toLowerCase()
+        .split(/\s+/)
+        .map((term) => term.trim())
+        .filter(Boolean),
+    ),
+  ];
+  const params = [...ownerScope.params];
+  const prefixConditions = ownerScope.clause
+    ? [ownerScope.clause.replace(/^WHERE /, "")]
+    : [];
+
   const groups = terms.map((term) => {
     const like = `%${term}%`;
     const conditions = PAYLINK_SEARCH_COLUMNS.map((column) => {
@@ -295,25 +382,15 @@ function buildPaylinkSearch(query: string) {
   });
 
   return {
-    whereClause: `WHERE ${groups.join(" AND ")}`,
+    whereClause: `WHERE ${[...prefixConditions, ...groups].join(" AND ")}`,
     params,
   };
 }
 
-function clampPageSize(value: number) {
-  const normalized = Math.trunc(value);
-
-  if (normalized <= 10) {
-    return 10;
-  }
-
-  if (normalized <= 25) {
+function clampPageSize(pageSize: number) {
+  if (!Number.isFinite(pageSize)) {
     return 25;
   }
 
-  if (normalized <= 50) {
-    return 50;
-  }
-
-  return 100;
+  return Math.min(100, Math.max(10, Math.trunc(pageSize)));
 }

@@ -1,7 +1,9 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { getSeedSettings } from "@/lib/env-defaults";
+import { hashPassword } from "@/lib/auth-crypto";
+import { getSeedSettings, getSeedSuperadmin } from "@/lib/env-defaults";
 import { nowIso } from "@/lib/utils";
 
 type SQLiteDatabase = Database.Database;
@@ -47,6 +49,7 @@ function createDatabase() {
 
     CREATE TABLE IF NOT EXISTS paylinks (
       id TEXT PRIMARY KEY,
+      owner_user_id TEXT NOT NULL DEFAULT '',
       order_id TEXT NOT NULL UNIQUE,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
@@ -79,15 +82,54 @@ function createDatabase() {
       payload TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL COLLATE NOCASE UNIQUE,
+      display_name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL,
+      active INTEGER NOT NULL,
+      admin_user_id TEXT NOT NULL DEFAULT '',
+      can_view_admin_scope INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `);
 
   const settingsColumns = (
     db.prepare("PRAGMA table_info(settings)").all() as Array<{ name: string }>
   ).map((column) => column.name);
+  const paylinkColumns = (
+    db.prepare("PRAGMA table_info(paylinks)").all() as Array<{ name: string }>
+  ).map((column) => column.name);
+  const userColumns = (
+    db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>
+  ).map((column) => column.name);
 
   if (!settingsColumns.includes("merchant_display_name")) {
     db.exec("ALTER TABLE settings ADD COLUMN merchant_display_name TEXT NOT NULL DEFAULT ''");
     db.exec("UPDATE settings SET merchant_display_name = app_name WHERE merchant_display_name = ''");
+  }
+
+  if (!paylinkColumns.includes("owner_user_id")) {
+    db.exec("ALTER TABLE paylinks ADD COLUMN owner_user_id TEXT NOT NULL DEFAULT ''");
+  }
+
+  if (!userColumns.includes("admin_user_id")) {
+    db.exec("ALTER TABLE users ADD COLUMN admin_user_id TEXT NOT NULL DEFAULT ''");
+  }
+
+  if (!userColumns.includes("can_view_admin_scope")) {
+    db.exec("ALTER TABLE users ADD COLUMN can_view_admin_scope INTEGER NOT NULL DEFAULT 0");
   }
 
   const seed = getSeedSettings();
@@ -115,6 +157,30 @@ function createDatabase() {
     createdAt: now,
     updatedAt: now,
   });
+
+  const superadminSeed = getSeedSuperadmin();
+  db.prepare(`
+    INSERT OR IGNORE INTO users (
+      id, username, display_name, password_hash, role, active, created_at, updated_at
+    )
+    VALUES (?, ?, ?, ?, 'superadmin', 1, ?, ?)
+  `).run(
+    randomUUID(),
+    superadminSeed.username,
+    superadminSeed.displayName || "Superadministrador",
+    hashPassword(superadminSeed.password),
+    now,
+    now,
+  );
+
+  const bootstrapSuperadmin = db
+    .prepare("SELECT id FROM users WHERE role = 'superadmin' ORDER BY datetime(created_at) ASC LIMIT 1")
+    .get() as { id: string } | undefined;
+
+  if (bootstrapSuperadmin) {
+    db.prepare("UPDATE paylinks SET owner_user_id = ? WHERE owner_user_id = ''")
+      .run(bootstrapSuperadmin.id);
+  }
 
   return db;
 }

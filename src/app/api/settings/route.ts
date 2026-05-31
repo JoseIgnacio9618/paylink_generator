@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { syncMerchantDisplayName } from "@/lib/monei";
 import { getSettings, updateSettings } from "@/lib/settings";
 import { settingsInputSchema } from "@/lib/validation";
@@ -7,6 +8,19 @@ export const runtime = "nodejs";
 
 export async function PATCH(request: Request) {
   try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
+    }
+
+    if (currentUser.role !== "superadmin") {
+      return NextResponse.json(
+        { error: "Solo el superadministrador puede modificar la configuración." },
+        { status: 403 },
+      );
+    }
+
     const currentSettings = getSettings();
     const body = await request.json();
     const parsed = settingsInputSchema.safeParse({
