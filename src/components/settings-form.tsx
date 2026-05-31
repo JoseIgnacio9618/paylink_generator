@@ -152,7 +152,7 @@ const FIELD_INFO: Record<InfoKey, InfoDefinition> = {
   emailBodyTemplate: {
     title: "Cuerpo del email",
     what: "Es la plantilla de texto del correo de confirmación.",
-    where: "La escribes tú. Puedes incluir variables como `{{title}}`, `{{price}}`, `{{status}}` o `{{orderId}}`.",
+    where: "La escribes tú. Puedes incluir variables como `{{title}}`, `{{price}}`, `{{status}}`, `{{orderId}}`, `{{customerName}}`, `{{customerEmail}}` o `{{customerPhone}}`. Esa plantilla se usa tanto para la versión texto como para el bloque principal del email HTML.",
   },
 };
 
