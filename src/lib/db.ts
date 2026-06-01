@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { hashPassword } from "@/lib/auth-crypto";
+import { isHostedCheckoutNextActionType } from "@/lib/paylink-checkout";
 import { getSeedSettings, getSeedSuperadmin } from "@/lib/env-defaults";
 import { nowIso } from "@/lib/utils";
 
@@ -60,6 +61,7 @@ function createDatabase() {
       customer_email TEXT NOT NULL,
       customer_phone TEXT NOT NULL,
       allowed_payment_methods TEXT NOT NULL,
+      checkout_url TEXT NOT NULL DEFAULT '',
       monei_payment_id TEXT NOT NULL UNIQUE,
       monei_status TEXT NOT NULL,
       monei_status_code TEXT NOT NULL,
@@ -124,6 +126,10 @@ function createDatabase() {
     db.exec("ALTER TABLE paylinks ADD COLUMN owner_user_id TEXT NOT NULL DEFAULT ''");
   }
 
+  if (!paylinkColumns.includes("checkout_url")) {
+    db.exec("ALTER TABLE paylinks ADD COLUMN checkout_url TEXT NOT NULL DEFAULT ''");
+  }
+
   if (!userColumns.includes("admin_user_id")) {
     db.exec("ALTER TABLE users ADD COLUMN admin_user_id TEXT NOT NULL DEFAULT ''");
   }
@@ -182,7 +188,89 @@ function createDatabase() {
       .run(bootstrapSuperadmin.id);
   }
 
+  backfillCheckoutUrls(db);
+
   return db;
+}
+
+type PaylinkCheckoutBackfillRow = {
+  id: string;
+  checkout_url: string;
+  payment_url: string;
+  next_action_type: string;
+};
+
+function backfillCheckoutUrls(db: SQLiteDatabase) {
+  const rows = db.prepare(`
+    SELECT id, checkout_url, payment_url, next_action_type
+    FROM paylinks
+    WHERE checkout_url = ''
+  `).all() as PaylinkCheckoutBackfillRow[];
+
+  if (rows.length === 0) {
+    return;
+  }
+
+  const readEvents = db.prepare(`
+    SELECT payload
+    FROM payment_events
+    WHERE paylink_id = ?
+    ORDER BY id ASC
+  `);
+  const updateCheckoutUrl = db.prepare(`
+    UPDATE paylinks
+    SET checkout_url = ?
+    WHERE id = ?
+  `);
+
+  for (const row of rows) {
+    const checkoutUrl = resolveCheckoutUrlFromHistory(
+      row,
+      readEvents.all(row.id) as Array<{ payload: string }>,
+    );
+
+    if (checkoutUrl) {
+      updateCheckoutUrl.run(checkoutUrl, row.id);
+    }
+  }
+}
+
+function resolveCheckoutUrlFromHistory(
+  paylink: Pick<PaylinkCheckoutBackfillRow, "payment_url" | "next_action_type">,
+  events: Array<{ payload: string }>,
+) {
+  if (paylink.payment_url && isHostedCheckoutNextActionType(paylink.next_action_type)) {
+    return paylink.payment_url;
+  }
+
+  for (const event of events) {
+    const checkoutUrl = extractCheckoutUrlFromPayload(event.payload);
+
+    if (checkoutUrl) {
+      return checkoutUrl;
+    }
+  }
+
+  return "";
+}
+
+function extractCheckoutUrlFromPayload(payload: string) {
+  try {
+    const parsed = JSON.parse(payload) as {
+      nextAction?: {
+        type?: string | null;
+        redirectUrl?: string | null;
+      } | null;
+    };
+
+    if (!isHostedCheckoutNextActionType(parsed.nextAction?.type)) {
+      return "";
+    }
+
+    return parsed.nextAction?.redirectUrl ?? "";
+  } catch {
+    return "";
+  }
 }
 
 export const db = globalForDatabase.__paylinkDb ?? createDatabase();

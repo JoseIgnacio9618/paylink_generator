@@ -9,6 +9,7 @@ import {
   SectionHeading,
   inputClassName,
 } from "@/components/panel-ui";
+import { canOpenCheckout, canRecreatePaylink } from "@/lib/paylink-checkout";
 import type { PaginatedPaylinksResult } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
   const [notice, setNotice] = useState<Notice>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [copyingId, setCopyingId] = useState<string | null>(null);
+  const [recreatingId, setRecreatingId] = useState<string | null>(null);
 
   async function syncPaylink(id: string) {
     setSyncingId(id);
@@ -48,11 +50,37 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
     }
   }
 
-  async function copyLink(id: string, url: string) {
-    if (!url) {
+  async function recreatePaylink(id: string) {
+    setRecreatingId(id);
+
+    try {
+      const response = await fetch(`/api/paylinks/${id}/recreate`, { method: "POST" });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "No se pudo recrear el link.");
+      }
+
+      setNotice({
+        tone: "success",
+        text: result.creationSummary?.message ?? "Se ha creado un nuevo link de pago.",
+      });
+      startTransition(() => router.refresh());
+    } catch (error) {
       setNotice({
         tone: "error",
-        text: "Este pago todavía no tiene URL de checkout disponible.",
+        text: error instanceof Error ? error.message : "No se pudo recrear el link.",
+      });
+    } finally {
+      setRecreatingId(null);
+    }
+  }
+
+  async function copyLink(id: string, url: string, canOpen: boolean) {
+    if (!url || !canOpen) {
+      setNotice({
+        tone: "error",
+        text: "Este pago ya no tiene un checkout reutilizable. Recrea un nuevo link para volver a cobrarlo.",
       });
       return;
     }
@@ -115,7 +143,7 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
       <SectionHeading
         eyebrow="Historial"
         title="Links y estados de pago"
-        description="Busca sobre todos los campos guardados y navega el histórico por páginas sin cargar toda la tabla de una vez."
+        description="Busca sobre todos los campos guardados, abre solo checkouts todavía reutilizables y recrea un nuevo link cuando un pago ya haya quedado en un estado final."
       />
 
       <form className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_auto]" onSubmit={submitSearch}>
@@ -190,84 +218,112 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                   </td>
                 </tr>
               ) : (
-                paylinks.items.map((paylink) => (
-                  <tr key={paylink.id} className="align-top">
-                    <td className="px-4 py-4">
-                      <div className="space-y-1">
-                        <p className="font-semibold text-foreground">{paylink.title}</p>
-                        <p className="text-sm leading-6 text-muted">
-                          {paylink.description || "Sin descripción"}
-                        </p>
-                        {paylink.ownerDisplayName ? (
-                          <p className="text-xs text-muted">
-                            Propietario: {paylink.ownerDisplayName}
-                            {paylink.ownerUsername ? ` (@${paylink.ownerUsername})` : ""}
+                paylinks.items.map((paylink) => {
+                  const canOpenCurrentCheckout = canOpenCheckout(paylink);
+                  const canRecreateCurrentPaylink = canRecreatePaylink(paylink);
+
+                  return (
+                    <tr key={paylink.id} className="align-top">
+                      <td className="px-4 py-4">
+                        <div className="space-y-1">
+                          <p className="font-semibold text-foreground">{paylink.title}</p>
+                          <p className="text-sm leading-6 text-muted">
+                            {paylink.description || "Sin descripción"}
                           </p>
-                        ) : null}
-                        <p className="font-mono text-xs text-muted">{paylink.moneiPaymentId}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm font-semibold text-foreground">
-                      {formatCurrency(paylink.amountCents, paylink.currency)}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="space-y-2">
-                        <StatusBadge status={paylink.moneiStatus} />
-                        {paylink.paidAt ? (
-                          <p className="text-xs text-muted">
-                            Pagado: {new Date(paylink.paidAt).toLocaleString("es-ES")}
+                          {paylink.ownerDisplayName ? (
+                            <p className="text-xs text-muted">
+                              Propietario: {paylink.ownerDisplayName}
+                              {paylink.ownerUsername ? ` (@${paylink.ownerUsername})` : ""}
+                            </p>
+                          ) : null}
+                          <p className="font-mono text-xs text-muted">{paylink.moneiPaymentId}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm font-semibold text-foreground">
+                        {formatCurrency(paylink.amountCents, paylink.currency)}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="space-y-2">
+                          <StatusBadge status={paylink.moneiStatus} />
+                          {paylink.paidAt ? (
+                            <p className="text-xs text-muted">
+                              Pagado: {new Date(paylink.paidAt).toLocaleString("es-ES")}
+                            </p>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="space-y-2 text-sm text-muted">
+                          <p>{paylink.notificationRecipients.join(", ") || "Sin destinatarios"}</p>
+                          <p>
+                            {paylink.notificationSentAt
+                              ? `Enviado ${new Date(paylink.notificationSentAt).toLocaleString("es-ES")}`
+                              : paylink.notificationError || "Pendiente"}
                           </p>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="space-y-2 text-sm text-muted">
-                        <p>{paylink.notificationRecipients.join(", ") || "Sin destinatarios"}</p>
-                        <p>
-                          {paylink.notificationSentAt
-                            ? `Enviado ${new Date(paylink.notificationSentAt).toLocaleString("es-ES")}`
-                            : paylink.notificationError || "Pendiente"}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-muted">
-                      {new Date(paylink.createdAt).toLocaleString("es-ES")}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={() => copyLink(paylink.id, paylink.paymentUrl)}
-                          disabled={copyingId === paylink.id}
-                          className="rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {copyingId === paylink.id ? "Copiando..." : "Copiar link"}
-                        </button>
-                        <a
-                          href={paylink.paymentUrl || "#"}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={cn(
-                            "rounded-xl border px-3 py-2 text-center text-sm font-medium",
-                            paylink.paymentUrl
-                              ? "border-border text-foreground hover:border-accent hover:text-accent"
-                              : "pointer-events-none border-border/60 text-muted opacity-60",
-                          )}
-                        >
-                          Abrir checkout
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => syncPaylink(paylink.id)}
-                          disabled={syncingId === paylink.id}
-                          className="rounded-xl bg-accent-warm px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {syncingId === paylink.id ? "Sincronizando..." : "Sincronizar"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-muted">
+                        {new Date(paylink.createdAt).toLocaleString("es-ES")}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyLink(
+                                paylink.id,
+                                paylink.checkoutUrl,
+                                canOpenCurrentCheckout,
+                              )
+                            }
+                            disabled={copyingId === paylink.id || !canOpenCurrentCheckout}
+                            className="rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {copyingId === paylink.id ? "Copiando..." : "Copiar link"}
+                          </button>
+                          <a
+                            href={canOpenCurrentCheckout ? paylink.checkoutUrl : "#"}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={cn(
+                              "rounded-xl border px-3 py-2 text-center text-sm font-medium",
+                              canOpenCurrentCheckout
+                                ? "border-border text-foreground hover:border-accent hover:text-accent"
+                                : "pointer-events-none border-border/60 text-muted opacity-60",
+                            )}
+                          >
+                            Abrir checkout
+                          </a>
+                          {canRecreateCurrentPaylink ? (
+                            <button
+                              type="button"
+                              onClick={() => recreatePaylink(paylink.id)}
+                              disabled={recreatingId === paylink.id}
+                              className="rounded-xl border border-accent px-3 py-2 text-sm font-medium text-accent hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {recreatingId === paylink.id ? "Recreando..." : "Recrear link"}
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => syncPaylink(paylink.id)}
+                            disabled={syncingId === paylink.id}
+                            className="rounded-xl bg-accent-warm px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {syncingId === paylink.id ? "Sincronizando..." : "Sincronizar"}
+                          </button>
+                          {!canOpenCurrentCheckout ? (
+                            <p className="text-xs leading-5 text-muted">
+                              {canRecreateCurrentPaylink
+                                ? "Este pago ya no admite reabrir el checkout original. Crea uno nuevo para reintentarlo."
+                                : "Este pago ya está completado o no necesita reabrirse."}
+                            </p>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

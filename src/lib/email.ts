@@ -232,7 +232,7 @@ export async function sendPaymentSuccessNotification(
     price: formatCurrency(paylink.amountCents, paylink.currency),
     status: payment.status ?? paylink.moneiStatus,
     orderId: paylink.orderId,
-    paymentUrl: paylink.paymentUrl || payment.nextAction?.redirectUrl || "",
+    paymentUrl: paylink.checkoutUrl || paylink.paymentUrl || "",
     moneiPaymentId: paylink.moneiPaymentId,
     customerName: paylink.customerName || payment.customer?.name || "-",
     customerEmail: paylink.customerEmail || payment.customer?.email || "-",

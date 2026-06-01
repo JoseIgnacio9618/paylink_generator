@@ -121,6 +121,16 @@ Para aceptar Google Pay en condiciones:
 
 En hosted payment page no requiere una integracion custom adicional, pero sigue dependiendo de que tarjeta y Google Pay esten habilitados para tu cuenta.
 
+Importante en `test mode`:
+
+- MONEI documenta que para Google Pay web puedes usar tarjetas reales guardadas en Chrome y que **no se cobraran**;
+- en ese modo, MONEI indica que los datos de la tarjeta se **sustituyen automaticamente por una tarjeta de prueba**;
+- por eso, al probar Google Pay en entorno de pruebas, el resultado final puede comportarse como un test de tarjeta y no como una autorizacion "real" de wallet.
+
+Fuente oficial:
+
+- [MONEI Google Pay](https://docs.monei.com/payment-methods/google-pay/)
+
 ### 3.5 Apple Pay (`applePay`)
 
 Para este proyecto, que usa la hosted payment page de MONEI, Apple Pay no requiere configuracion extra de checkout custom.
@@ -214,6 +224,103 @@ En este proyecto, el `2026-05-30`, la cuenta devolvio:
 
 Esto coincide con la documentacion oficial de MONEI sobre el limite por defecto de tarjeta de `4.000 EUR`.
 
+## 6.1 Observacion real sobre Google Pay en esta cuenta de prueba
+
+En esta integracion, al probar Google Pay en `test mode`, el payload final observado para un pago devolvio:
+
+- `paymentMethod.method = card`
+- `last4 = 4406`
+- `threeDSecureStatus = Y`
+- `status = FAILED`
+- `statusCode = E200`
+
+Lectura practica:
+
+- el challenge o 3DS puede terminar bien;
+- eso **no garantiza** que la autorizacion final del pago se apruebe;
+- `E200` significa que la transaccion fallo durante el procesamiento, pero **no da una razon mas precisa**;
+- por tanto, un `cr=SUCCESS` en la URL del `challenge` solo confirma que la autenticacion termino, no que el cobro quedo aprobado.
+
+Lo que si puede afirmarse con seguridad por documentacion oficial:
+
+- `CHALLENGE` es solo la fase 3DS o del banco;
+- `COMPLETE` es la redireccion final;
+- el estado final autoritativo sigue siendo el `status` del `Payment` (`SUCCEEDED`, `FAILED`, etc.);
+- `E200` es un error generico de procesamiento.
+
+Fuentes oficiales:
+
+- [MONEI NextActionTypes](https://docs.monei.com/apis/graphql/types/enums/next-action-types/)
+- [MONEI Payments status codes](https://docs.monei.com/apis/rest/payments/)
+
+Nota:
+
+- que Google Pay de prueba se haya sustituido aqui por una tarjeta terminada en `4406` es una **inferencia basada en el payload observado en esta cuenta**, no una afirmacion explicita de la documentacion de MONEI sobre que siempre use exactamente esa tarjeta.
+
+## 6.2 Como probar correctamente en test mode
+
+Si quieres pruebas controladas y reproducibles, usa los datos oficiales de testing de MONEI en lugar de improvisar tarjetas:
+
+### Tarjetas de prueba oficiales
+
+Para todas las tarjetas de prueba:
+
+- expiracion `12/34`
+- CVC `123`
+
+Tarjetas oficiales documentadas por MONEI:
+
+- `4444444444444406` -> Visa, `3D Secure v2.1 Challenge`
+- `4444444444444414` -> Visa, `3D Secure v2.1 Direct (no challenge)`
+- `4444444444444422` -> Visa, `3D Secure v2.1 Frictionless`
+- `4444444444444430` -> Visa, `3D Secure v2.1 Frictionless and Challenge`
+- `5555555555555524` -> Mastercard, `3D Secure v2.1 Direct (no challenge)`
+- `5555555555555532` -> Mastercard, `3D Secure v2.1 Frictionless`
+- `5555555555555565` -> Mastercard, `3D Secure v2.1 Challenge`
+- `5555555555555573` -> Mastercard, `3D Secure v2.1 Frictionless and Challenge`
+
+### Bizum de prueba
+
+MONEI documenta para Bizum en test:
+
+- telefono: `+34500000000`
+- por debajo de `5 EUR` -> `E000` aprobado
+- entre `5 EUR` y `10 EUR` -> `E506`
+- entre `10 EUR` y `15 EUR` -> `E000` en flujo redirect
+- por encima de `15 EUR` -> telefono no registrado
+
+Y ademas advierte:
+
+- en entorno de pruebas, Bizum solo soporta operaciones por debajo de `5 EUR`
+
+### PayPal de prueba
+
+Cuentas oficiales documentadas por MONEI:
+
+- business: `paypal-business@monei.net` / `monei12345`
+- personal: `paypal-personal@monei.net` / `monei12345`
+- fallo simulado: `CCREJECT-REFUSED@paypal.com` / `PayPal2016`
+
+En la cuenta de fallo simulado, MONEI documenta que:
+
+- PayPal Credit y la tarjeta terminada en `1111` dentro del wallet producen exito;
+- el resto de tarjetas del wallet producen rechazo.
+
+### Recomendacion operativa para esta app
+
+Para aislar problemas, prueba en este orden:
+
+1. `card` puro con una de las tarjetas oficiales de MONEI.
+2. `bizum` con importe `< 5 EUR` y telefono de prueba oficial.
+3. `paypal` con las cuentas sandbox oficiales.
+4. `googlePay` solo cuando ya hayas validado que tarjeta normal funciona, sabiendo que en test mode MONEI sustituye la tarjeta real por una de prueba.
+
+Con eso distingues mucho mejor:
+
+- fallos de metodo concreto;
+- efectos del challenge 3DS;
+- y confusiones propias de wallet/test mode.
+
 ## 7. Checklist de puesta en marcha sin bloqueos evitables
 
 ### Basico
@@ -278,6 +385,7 @@ Por eso la regla correcta de producto es esta:
 - [MONEI Google Pay](https://docs.monei.com/payment-methods/google-pay/)
 - [MONEI Apple Pay](https://docs.monei.com/payment-methods/apple-pay/)
 - [MONEI Click to Pay](https://docs.monei.com/payment-methods/click-to-pay/)
+- [MONEI Testing](https://docs.monei.com/testing/)
 - [MONEI Verify Signature](https://docs.monei.com/guides/verify-signature/)
 - [MONEI Testing](https://docs.monei.com/docs/testing/)
 - [Apple Pay Domain API](https://docs.monei.com/apis/rest/apple-pay-domain/)

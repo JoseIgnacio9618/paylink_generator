@@ -3,6 +3,7 @@
 import { startTransition, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SUPPORTED_PAYMENT_METHODS } from "@/lib/constants";
+import { isPublicBaseUrl } from "@/lib/paylink-checkout";
 import type { MoneiCheckoutSnapshot, SettingsRecord } from "@/lib/types";
 import { cn, formatPaymentMethodLabel, formatPaymentMethodList } from "@/lib/utils";
 import {
@@ -180,6 +181,7 @@ export function SettingsForm({
     () => (activeInfo ? FIELD_INFO[activeInfo] : null),
     [activeInfo],
   );
+  const baseUrlLooksPublic = isPublicBaseUrl(form.baseUrl);
   const removedDefaultMethods =
     availablePaymentMethods.length > 0
       ? settings.allowedPaymentMethods.filter(
@@ -278,6 +280,11 @@ export function SettingsForm({
             labelAction={<InfoButton onClick={() => setActiveInfo("baseUrl")} />}
           />
         </div>
+        {form.baseUrl.trim() && !baseUrlLooksPublic ? (
+          <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50/90 px-4 py-4 text-sm leading-6 text-amber-900">
+            La `Base URL` actual no es pública. Si mantienes `localhost` o `127.0.0.1`, MONEI no podrá llamar al webhook ni cerrar bien el flujo final del pago. Para pruebas usa una URL pública o un túnel como `ngrok` o `Cloudflare Tunnel`.
+          </div>
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-3">
           <Field

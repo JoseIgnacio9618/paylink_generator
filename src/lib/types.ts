@@ -72,6 +72,7 @@ export interface PaylinkRecord {
   customerEmail: string;
   customerPhone: string;
   allowedPaymentMethods: string[];
+  checkoutUrl: string;
   moneiPaymentId: string;
   moneiStatus: string;
   moneiStatusCode: string;

@@ -36,10 +36,16 @@ cp .env.example .env.local
 4. Arranca en local:
 
 ```bash
-npm run dev
+npm run start
 ```
 
-Abre `http://localhost:3000`.
+Ese comando levanta `next dev` bajo `nodemon` en `http://localhost:3000`.
+
+Si solo quieres arrancar Next sin túnel:
+
+```bash
+npm run dev
+```
 
 ## Flujo MONEI implementado
 

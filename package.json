@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "start:dev": "next dev",
+    "start": "npm run start:app",
+    "start:app": "nodemon --watch src --watch package.json --watch next.config.ts --watch postcss.config.mjs --watch eslint.config.mjs --ext ts,tsx,js,jsx,mjs,json,css --signal SIGTERM --exec \"next dev --port 3000\"",
+    "start:dev": "npm run start",
     "start:prod": "next start",
     "lint": "eslint"
   },
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "nodemon": "^3.1.10",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

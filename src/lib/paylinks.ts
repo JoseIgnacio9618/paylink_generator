@@ -1,5 +1,6 @@
 import type { Payment } from "@monei-js/node-sdk";
 import { db } from "@/lib/db";
+import { getStableCheckoutUrl } from "@/lib/paylink-checkout";
 import type { PaginatedPaylinksResult, PaylinkRecord } from "@/lib/types";
 import { nowIso, parseJsonArray } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ type PaylinkRow = {
   customer_email: string;
   customer_phone: string;
   allowed_payment_methods: string;
+  checkout_url: string;
   monei_payment_id: string;
   monei_status: string;
   monei_status_code: string;
@@ -54,6 +56,7 @@ const PAYLINK_SEARCH_COLUMNS = [
   "paylinks.customer_email",
   "paylinks.customer_phone",
   "paylinks.allowed_payment_methods",
+  "paylinks.checkout_url",
   "paylinks.monei_payment_id",
   "paylinks.monei_status",
   "paylinks.monei_status_code",
@@ -88,6 +91,7 @@ function mapPaylinkRow(row: PaylinkRow): PaylinkRecord {
     customerEmail: row.customer_email,
     customerPhone: row.customer_phone,
     allowedPaymentMethods: parseJsonArray(row.allowed_payment_methods),
+    checkoutUrl: row.checkout_url,
     moneiPaymentId: row.monei_payment_id,
     moneiStatus: row.monei_status,
     moneiStatusCode: row.monei_status_code,
@@ -232,14 +236,14 @@ export function insertPaylink(input: {
   db.prepare(`
     INSERT INTO paylinks (
       id, owner_user_id, order_id, title, description, amount_cents, currency, recipient_email,
-      customer_name, customer_email, customer_phone, allowed_payment_methods,
+      customer_name, customer_email, customer_phone, allowed_payment_methods, checkout_url,
       monei_payment_id, monei_status, monei_status_code, payment_url,
       next_action_type, last_payload, notification_sent_at,
       notification_recipients, notification_error, paid_at, created_at, updated_at
     )
     VALUES (
       @id, @ownerUserId, @orderId, @title, @description, @amountCents, @currency, @recipientEmail,
-      @customerName, @customerEmail, @customerPhone, @allowedPaymentMethods,
+      @customerName, @customerEmail, @customerPhone, @allowedPaymentMethods, @checkoutUrl,
       @moneiPaymentId, @moneiStatus, @moneiStatusCode, @paymentUrl, @nextActionType,
       @lastPayload, '', '[]', '', @paidAt, @createdAt, @updatedAt
     )
@@ -256,6 +260,7 @@ export function insertPaylink(input: {
     customerEmail: input.customerEmail,
     customerPhone: input.customerPhone,
     allowedPaymentMethods: JSON.stringify(input.allowedPaymentMethods),
+    checkoutUrl: getStableCheckoutUrl(input.payment),
     moneiPaymentId: input.payment.id,
     moneiStatus: input.payment.status ?? "PENDING",
     moneiStatusCode: input.payment.statusCode ?? "",
@@ -298,10 +303,12 @@ export function applyPaymentUpdate(
 
   const now = nowIso();
   const paidAt = payment.status === "SUCCEEDED" ? existing.paidAt || now : existing.paidAt;
+  const checkoutUrl = getStableCheckoutUrl(payment) || existing.checkoutUrl;
 
   db.prepare(`
     UPDATE paylinks
     SET
+      checkout_url = @checkoutUrl,
       monei_status = @moneiStatus,
       monei_status_code = @moneiStatusCode,
       payment_url = @paymentUrl,
@@ -312,6 +319,7 @@ export function applyPaymentUpdate(
     WHERE id = @id
   `).run({
     id: paylinkId,
+    checkoutUrl,
     moneiStatus: payment.status ?? existing.moneiStatus,
     moneiStatusCode: payment.statusCode ?? existing.moneiStatusCode,
     paymentUrl: payment.nextAction?.redirectUrl ?? existing.paymentUrl,

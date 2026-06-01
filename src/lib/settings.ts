@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { isPublicBaseUrl } from "@/lib/paylink-checkout";
 import type { SettingsRecord } from "@/lib/types";
 import { nowIso, parseJsonArray } from "@/lib/utils";
 
@@ -110,6 +111,8 @@ export function getConfigurationWarnings(settings: SettingsRecord) {
 
   if (!settings.baseUrl) {
     warnings.push("Configura `Base URL` para que MONEI pueda llamar al webhook y redirigir al cliente.");
+  } else if (!isPublicBaseUrl(settings.baseUrl)) {
+    warnings.push("La `Base URL` actual no es pública. Si usas `localhost` o `127.0.0.1`, MONEI no podrá llamar al webhook. Usa una URL pública o un túnel como ngrok/Cloudflare Tunnel.");
   }
 
   if (!settings.moneiApiKey) {
