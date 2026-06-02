@@ -75,6 +75,10 @@ const PAYLINK_SEARCH_COLUMNS = [
   "printf('%.2f', paylinks.amount_cents / 100.0)",
 ] as const;
 
+function normalizePhoneSearchValue(value: string) {
+  return value.replace(/[\s()+-]/g, "");
+}
+
 function mapPaylinkRow(row: PaylinkRow): PaylinkRecord {
   return {
     id: row.id,
@@ -382,10 +386,19 @@ function buildPaylinkSearch(query: string, ownerUserIds?: string[]) {
 
   const groups = terms.map((term) => {
     const like = `%${term}%`;
+    const normalizedPhoneTerm = normalizePhoneSearchValue(term);
     const conditions = PAYLINK_SEARCH_COLUMNS.map((column) => {
       params.push(like);
       return `LOWER(COALESCE(${column}, '')) LIKE ?`;
     });
+
+    if (normalizedPhoneTerm) {
+      params.push(`%${normalizedPhoneTerm}%`);
+      conditions.push(
+        "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(paylinks.customer_phone, ''), ' ', ''), '+', ''), '-', ''), '(', ''), ')', '') LIKE ?",
+      );
+    }
+
     return `(${conditions.join(" OR ")})`;
   });
 
