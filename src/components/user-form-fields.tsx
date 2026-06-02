@@ -58,7 +58,7 @@ export function ToggleField({
         type="button"
         onClick={() => onChange(!checked)}
         disabled={disabled}
-        className={`inline-flex h-[50px] items-center justify-center rounded-2xl border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`inline-flex h-[50px] w-full items-center justify-center rounded-2xl border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
           checked
             ? "border-emerald-200 bg-emerald-50 text-emerald-800"
             : "border-border bg-surface text-muted"

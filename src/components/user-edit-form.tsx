@@ -10,9 +10,9 @@ import {
   SectionHeading,
 } from "@/components/panel-ui";
 import {
-  CheckboxField,
   SelectField,
   SharedPaymentsField,
+  ToggleField,
   USER_ROLE_OPTIONS,
 } from "@/components/user-form-fields";
 import type { UserRecord, UserRole, UserSummary } from "@/lib/types";
@@ -26,6 +26,7 @@ type EditUserFormState = {
   username: string;
   displayName: string;
   password: string;
+  confirmPassword: string;
   role: UserRole;
   active: boolean;
   canViewAllPayments: boolean;
@@ -36,6 +37,7 @@ function buildInitialState(user: UserRecord): EditUserFormState {
     username: user.username,
     displayName: user.displayName,
     password: "",
+    confirmPassword: "",
     role: user.role,
     active: user.active,
     canViewAllPayments: user.canViewAllPayments,
@@ -67,8 +69,16 @@ export function UserEditForm({
 
   async function saveChanges(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSaving(true);
     setNotice(null);
+
+    const isUpdatingPassword = form.password.length > 0 || form.confirmPassword.length > 0;
+
+    if (isUpdatingPassword && form.password !== form.confirmPassword) {
+      setNotice({ tone: "error", text: "Las contraseñas deben coincidir." });
+      return;
+    }
+
+    setIsSaving(true);
 
     try {
       const response = await fetch(`/api/users/${user.id}`, {
@@ -82,7 +92,7 @@ export function UserEditForm({
         throw new Error(result.error ?? "No se pudo actualizar el usuario.");
       }
 
-      setForm((current) => ({ ...current, password: "" }));
+      setForm((current) => ({ ...current, password: "", confirmPassword: "" }));
       setNotice({ tone: "success", text: "Usuario actualizado correctamente." });
       router.refresh();
     } catch (error) {
@@ -149,21 +159,27 @@ export function UserEditForm({
           />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_220px_220px]">
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted">
-              <span>Nueva contraseña</span>
-            </label>
-            <input
-              type="password"
-              value={form.password}
-              placeholder="Déjala vacía para no cambiarla"
-              onChange={(event) =>
-                setForm((current) => ({ ...current, password: event.target.value }))
-              }
-              className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground shadow-[0_1px_0_rgba(18,34,38,0.02)] outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
-            />
-          </div>
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_220px_220px]">
+          <Field
+            label="Nueva contraseña"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={form.password}
+            placeholder="Déjala vacía para no cambiarla"
+            onChange={(value) => setForm((current) => ({ ...current, password: value }))}
+          />
+          <Field
+            label="Repetir contraseña"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            value={form.confirmPassword}
+            placeholder="Repítela solo si la cambias"
+            onChange={(value) =>
+              setForm((current) => ({ ...current, confirmPassword: value }))
+            }
+          />
 
           <SelectField
             label="Rol"
@@ -172,7 +188,7 @@ export function UserEditForm({
             options={USER_ROLE_OPTIONS}
           />
 
-          <CheckboxField
+          <ToggleField
             label="Activo"
             checked={form.active}
             onChange={(checked) => setForm((current) => ({ ...current, active: checked }))}

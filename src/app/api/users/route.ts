@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = createUserInputSchema.safeParse({
       ...body,
+      confirmPassword: String(body.confirmPassword ?? ""),
       active: Boolean(body.active),
       canViewAllPayments: Boolean(body.canViewAllPayments),
     });
@@ -45,7 +46,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = createUser(parsed.data);
+    const user = createUser({
+      username: parsed.data.username,
+      displayName: parsed.data.displayName,
+      password: parsed.data.password,
+      role: parsed.data.role,
+      active: parsed.data.active,
+      canViewAllPayments: parsed.data.canViewAllPayments,
+    });
     return NextResponse.json({ user });
   } catch (error) {
     return NextResponse.json(

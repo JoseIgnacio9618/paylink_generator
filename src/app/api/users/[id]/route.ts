@@ -26,6 +26,7 @@ export async function PATCH(request: Request, context: { params: Params }) {
       active: Boolean(body.active),
       canViewAllPayments: Boolean(body.canViewAllPayments),
       password: body.password ? String(body.password) : "",
+      confirmPassword: body.confirmPassword ? String(body.confirmPassword) : "",
     });
 
     if (!parsed.success) {
@@ -43,8 +44,12 @@ export async function PATCH(request: Request, context: { params: Params }) {
     }
 
     const user = updateUser(id, {
-      ...parsed.data,
+      username: parsed.data.username,
+      displayName: parsed.data.displayName,
       password: parsed.data.password || undefined,
+      role: parsed.data.role,
+      active: parsed.data.active,
+      canViewAllPayments: parsed.data.canViewAllPayments,
     });
 
     return NextResponse.json({ user });

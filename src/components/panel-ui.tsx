@@ -85,6 +85,8 @@ export function Field({
   placeholder,
   onChange,
   labelAction,
+  type = "text",
+  autoComplete,
 }: {
   label: string;
   name: string;
@@ -92,6 +94,8 @@ export function Field({
   placeholder?: string;
   onChange: (value: string) => void;
   labelAction?: React.ReactNode;
+  type?: React.HTMLInputTypeAttribute;
+  autoComplete?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -101,8 +105,10 @@ export function Field({
       </div>
       <input
         name={name}
+        type={type}
         value={value}
         placeholder={placeholder}
+        autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
         className={inputClassName}
       />

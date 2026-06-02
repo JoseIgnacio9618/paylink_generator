@@ -9,9 +9,9 @@ import {
   SectionHeading,
 } from "@/components/panel-ui";
 import {
-  CheckboxField,
   SelectField,
   SharedPaymentsField,
+  ToggleField,
   USER_ROLE_OPTIONS,
 } from "@/components/user-form-fields";
 import type { UserRole } from "@/lib/types";
@@ -25,6 +25,7 @@ type CreateUserFormState = {
   username: string;
   displayName: string;
   password: string;
+  confirmPassword: string;
   role: UserRole;
   active: boolean;
   canViewAllPayments: boolean;
@@ -34,6 +35,7 @@ const INITIAL_FORM: CreateUserFormState = {
   username: "",
   displayName: "",
   password: "",
+  confirmPassword: "",
   role: "user",
   active: true,
   canViewAllPayments: false,
@@ -55,8 +57,14 @@ export function UserCreateForm() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSubmitting(true);
     setNotice(null);
+
+    if (form.password !== form.confirmPassword) {
+      setNotice({ tone: "error", text: "Las contraseñas deben coincidir." });
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       const response = await fetch("/api/users", {
@@ -107,20 +115,23 @@ export function UserCreateForm() {
           />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_220px_220px]">
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted">
-              <span>Contraseña</span>
-            </label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, password: event.target.value }))
-              }
-              className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground shadow-[0_1px_0_rgba(18,34,38,0.02)] outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
-            />
-          </div>
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_220px_220px]">
+          <Field
+            label="Contraseña"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={form.password}
+            onChange={(value) => setForm((current) => ({ ...current, password: value }))}
+          />
+          <Field
+            label="Repetir contraseña"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            value={form.confirmPassword}
+            onChange={(value) => setForm((current) => ({ ...current, confirmPassword: value }))}
+          />
 
           <SelectField
             label="Rol"
@@ -129,7 +140,7 @@ export function UserCreateForm() {
             options={USER_ROLE_OPTIONS}
           />
 
-          <CheckboxField
+          <ToggleField
             label="Activo"
             checked={form.active}
             onChange={(checked) => setForm((current) => ({ ...current, active: checked }))}

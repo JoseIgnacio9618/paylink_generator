@@ -3,6 +3,12 @@ import { SUPPORTED_PAYMENT_METHODS } from "@/lib/constants";
 
 const paymentMethodSchema = z.enum(SUPPORTED_PAYMENT_METHODS);
 const userRoleSchema = z.enum(["superadmin", "user"]);
+const passwordSchema = z.string().min(8, "La contraseña debe tener al menos 8 caracteres.");
+const passwordConfirmationSchema = z
+  .string()
+  .min(8, "Debes repetir la contraseña con al menos 8 caracteres.");
+const optionalPasswordSchema = passwordSchema.or(z.literal(""));
+const optionalPasswordConfirmationSchema = passwordConfirmationSchema.or(z.literal(""));
 
 export const settingsInputSchema = z.object({
   appName: z.string().trim().min(1),
@@ -45,20 +51,57 @@ export const loginInputSchema = z.object({
   password: z.string().min(1),
 });
 
-export const createUserInputSchema = z.object({
-  username: z.string().trim().min(3),
-  displayName: z.string().trim().min(1),
-  password: z.string().min(8),
-  role: userRoleSchema,
-  active: z.boolean(),
-  canViewAllPayments: z.boolean(),
-});
+export const createUserInputSchema = z
+  .object({
+    username: z.string().trim().min(3),
+    displayName: z.string().trim().min(1),
+    password: passwordSchema,
+    confirmPassword: passwordConfirmationSchema,
+    role: userRoleSchema,
+    active: z.boolean(),
+    canViewAllPayments: z.boolean(),
+  })
+  .superRefine(({ password, confirmPassword }, context) => {
+    if (password !== confirmPassword) {
+      context.addIssue({
+        code: "custom",
+        path: ["confirmPassword"],
+        message: "Las contraseñas deben coincidir.",
+      });
+    }
+  });
 
-export const updateUserInputSchema = z.object({
-  username: z.string().trim().min(3),
-  displayName: z.string().trim().min(1),
-  password: z.string().min(8).optional().or(z.literal("")),
-  role: userRoleSchema,
-  active: z.boolean(),
-  canViewAllPayments: z.boolean(),
-});
+export const updateUserInputSchema = z
+  .object({
+    username: z.string().trim().min(3),
+    displayName: z.string().trim().min(1),
+    password: optionalPasswordSchema,
+    confirmPassword: optionalPasswordConfirmationSchema,
+    role: userRoleSchema,
+    active: z.boolean(),
+    canViewAllPayments: z.boolean(),
+  })
+  .superRefine(({ password, confirmPassword }, context) => {
+    const isUpdatingPassword = password.length > 0 || confirmPassword.length > 0;
+
+    if (!isUpdatingPassword) {
+      return;
+    }
+
+    if (!password || !confirmPassword) {
+      context.addIssue({
+        code: "custom",
+        path: ["confirmPassword"],
+        message: "Debes escribir la nueva contraseña dos veces.",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      context.addIssue({
+        code: "custom",
+        path: ["confirmPassword"],
+        message: "Las contraseñas deben coincidir.",
+      });
+    }
+  });
