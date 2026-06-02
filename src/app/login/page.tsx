@@ -12,8 +12,10 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-10">
-      <LoginForm />
+    <main className="mx-auto flex w-full max-w-[96rem] flex-1 items-center px-4 py-10 sm:px-6 lg:px-10">
+      <div className="flex w-full items-center justify-center">
+        <LoginForm />
+      </div>
     </main>
   );
 }

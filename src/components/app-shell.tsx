@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  primaryButtonClassName,
+  secondaryButtonClassName,
+} from "@/components/panel-ui";
+import { ThemeToggle, ThemeToggleCompact } from "@/components/theme-toggle";
 import { APP_NAV_ITEMS } from "@/lib/navigation";
 import type { UserRecord } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -48,128 +52,167 @@ export function AppShell({
   }
 
   return (
-    <div className="relative flex min-h-full flex-1 flex-col">
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/78 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href="/"
-              className={cn(
-                "inline-flex shrink-0 items-center gap-3 rounded-full border px-2.5 py-2 pr-4 shadow-[0_10px_30px_rgba(18,34,38,0.08)]",
-                pathname === "/"
-                  ? "border-accent/30 bg-surface text-foreground"
-                  : "border-border bg-surface/88 text-foreground hover:border-accent/45",
-              )}
-              aria-label="Ir a inicio"
-            >
-              <span
-                className={cn(
-                  "inline-flex size-9 items-center justify-center rounded-full text-sm font-semibold",
-                  pathname === "/"
-                    ? "bg-accent text-white"
-                    : "bg-surface-strong text-accent",
-                )}
-              >
-                <span className="font-mono text-[12px] uppercase tracking-[0.18em]">PG</span>
-              </span>
-              <span className="text-sm font-semibold tracking-tight">Paylink</span>
-            </Link>
-
-            <div className="min-w-0">
-              <p className="font-mono text-xs uppercase tracking-[0.26em] text-accent">
-                {appName}
-              </p>
-              <p className="truncate text-sm text-muted">
-                {currentItem?.description ?? "Panel privado"}
-              </p>
+    <div className="relative min-h-full flex-1 lg:grid lg:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="hidden border-r border-border/70 lg:flex lg:min-h-screen lg:flex-col lg:bg-background/55">
+        <div className="sticky top-0 flex h-screen min-h-0 flex-col gap-4 overflow-y-auto px-6 py-6">
+          <div className="rounded-[2rem] border border-border/70 bg-surface/88 p-5 shadow-[var(--shadow)]">
+            <div className="flex items-start justify-between gap-4">
+              <Link href="/" className="group block min-w-0 flex-1" aria-label="Ir a inicio">
+                <div className="flex items-center">
+                  <div className="min-w-0">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-accent">
+                      {appName}
+                    </p>
+                    <p className="mt-2 font-[family:var(--font-display)] text-3xl font-semibold tracking-[-0.04em] text-foreground">
+                      Paylink
+                    </p>
+                  </div>
+                </div>
+              </Link>
+              <ThemeToggleCompact />
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden rounded-full border border-border bg-surface/85 px-4 py-2 text-right shadow-[0_10px_30px_rgba(18,34,38,0.08)] sm:block">
-              <p className="text-sm font-semibold text-foreground">{currentUser.displayName}</p>
-              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                {currentUser.role}
+          <nav className="rounded-[2rem] border border-border/70 bg-surface/82 p-3 shadow-[var(--shadow)]">
+            <p className="px-3 pb-3 font-mono text-[10px] uppercase tracking-[0.28em] text-muted">
+              Navegacion
+            </p>
+            <div className="space-y-2">
+              {navItems.map((item, index) => {
+                const active = isItemActive(item.href, pathname);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "group block rounded-[1.35rem] border px-4 py-3 transition-all",
+                      active
+                        ? "border-accent/35 bg-accent text-white shadow-[0_18px_34px_rgba(154,79,36,0.2)]"
+                        : "border-transparent bg-background/36 text-foreground hover:-translate-y-0.5 hover:border-border hover:bg-surface",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-semibold">{item.label}</p>
+                      <span
+                        className={cn(
+                          "font-mono text-[10px] uppercase tracking-[0.22em]",
+                          active ? "text-white/70" : "text-muted",
+                        )}
+                      >
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <p className={cn("mt-1.5 text-sm leading-5", active ? "text-white/78" : "text-muted")}>
+                      {item.description}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
+
+          <div className="mt-auto rounded-[2rem] border border-border/70 bg-surface/82 p-5 shadow-[var(--shadow)]">
+            <div className="rounded-[1.5rem] border border-border/70 bg-background/45 p-4">
+              <p className="text-base font-semibold text-foreground">{currentUser.displayName}</p>
+              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.24em] text-muted">
+                {currentUser.role === "superadmin" ? "Superadministrador" : "Usuario"}
               </p>
             </div>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpen((current) => !current)}
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/85 px-4 py-2 text-sm font-medium text-foreground shadow-[0_10px_30px_rgba(18,34,38,0.08)] hover:border-accent/50 hover:text-accent"
-                aria-expanded={open}
-                aria-haspopup="menu"
-              >
-                <span>Menú</span>
-                <span className={cn("text-xs transition-transform", open && "rotate-180")}>
-                  ▼
-                </span>
-              </button>
-
-              {open ? (
-                <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[1.5rem] border border-border bg-surface shadow-[var(--shadow)]">
-                  <div className="border-b border-border/80 px-4 py-3">
-                    <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
-                      Navegación
-                    </p>
-                  </div>
-                  <div className="p-2">
-                    {navItems.map((item, index) => {
-                      const active = isItemActive(item.href, pathname);
-
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setOpen(false)}
-                          className={cn(
-                            "block rounded-[1.1rem] px-4 py-3",
-                            active
-                              ? "bg-accent text-white"
-                              : "text-foreground hover:bg-surface-strong",
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold">{item.label}</p>
-                            <span
-                              className={cn(
-                                "font-mono text-[11px] uppercase tracking-[0.22em]",
-                                active ? "text-white/72" : "text-muted",
-                              )}
-                            >
-                              {String(index + 1).padStart(2, "0")}
-                            </span>
-                          </div>
-                          <p
-                            className={cn(
-                              "mt-1 text-sm",
-                              active ? "text-white/82" : "text-muted",
-                            )}
-                          >
-                            {item.description}
-                          </p>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
             <button
               type="button"
               onClick={signOut}
               disabled={isSigningOut}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/85 px-4 py-2 text-sm font-medium text-foreground shadow-[0_10px_30px_rgba(18,34,38,0.08)] hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+              className={`mt-4 w-full ${secondaryButtonClassName}`}
             >
-              {isSigningOut ? "Saliendo..." : "Salir"}
+              {isSigningOut ? "Saliendo..." : "Cerrar sesion"}
             </button>
-            <ThemeToggle />
           </div>
         </div>
-      </header>
+      </aside>
 
-      {children}
+      <div className="min-w-0 flex flex-col">
+        <header className="sticky top-0 z-30 border-b border-border/70 bg-background/82 backdrop-blur-xl lg:hidden">
+          <div className="mx-auto flex w-full max-w-[96rem] items-center justify-between gap-3 px-4 py-4 sm:px-6">
+            <div className="min-w-0">
+              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-accent">
+                {appName}
+              </p>
+              <p className="truncate font-[family:var(--font-display)] text-2xl font-semibold tracking-[-0.04em] text-foreground">
+                {currentItem?.label ?? "Paylink"}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={() => setOpen((current) => !current)}
+                className={secondaryButtonClassName}
+                aria-expanded={open}
+                aria-haspopup="menu"
+              >
+                {open ? "Cerrar" : "Menu"}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {open ? (
+          <div className="fixed inset-0 z-40 bg-[#120d08]/32 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)}>
+            <div
+              className="absolute inset-x-4 top-20 rounded-[2rem] border border-border/70 bg-surface/96 p-4 shadow-[var(--shadow)]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="rounded-[1.5rem] border border-border/70 bg-background/40 p-4">
+                <p className="text-base font-semibold text-foreground">{currentUser.displayName}</p>
+                <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.24em] text-muted">
+                  {currentUser.role}
+                </p>
+              </div>
+              <div className="mt-4 space-y-2">
+                {navItems.map((item, index) => {
+                  const active = isItemActive(item.href, pathname);
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "block rounded-[1.4rem] border px-4 py-4",
+                        active
+                          ? "border-accent/35 bg-accent text-white"
+                          : "border-transparent bg-background/35 text-foreground",
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold">{item.label}</p>
+                        <span className={cn("font-mono text-[10px] uppercase tracking-[0.22em]", active ? "text-white/72" : "text-muted")}>
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                      </div>
+                      <p className={cn("mt-2 text-sm leading-6", active ? "text-white/78" : "text-muted")}>
+                        {item.description}
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={signOut}
+                disabled={isSigningOut}
+                className={cn("mt-4 w-full", primaryButtonClassName)}
+              >
+                {isSigningOut ? "Saliendo..." : "Cerrar sesion"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {children}
+      </div>
     </div>
   );
 }

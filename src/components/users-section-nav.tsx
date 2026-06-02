@@ -24,7 +24,7 @@ export function UsersSectionNav() {
 
   return (
     <div className="flex justify-start">
-      <div className="inline-flex rounded-full border border-border bg-surface/80 p-1 shadow-[0_10px_30px_rgba(18,34,38,0.05)]">
+      <div className="inline-flex rounded-[1.5rem] border border-border/70 bg-surface/88 p-1.5 shadow-[0_16px_30px_rgba(58,44,34,0.07)]">
         {USER_SECTION_ITEMS.map((item) => {
           const active = isItemActive(pathname, item.href);
 
@@ -33,10 +33,10 @@ export function UsersSectionNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+                "rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold transition-all",
                 active
-                  ? "bg-accent text-white"
-                  : "text-muted hover:text-foreground",
+                  ? "bg-accent text-white shadow-[0_16px_24px_rgba(154,79,36,0.18)]"
+                  : "text-muted hover:bg-background/45 hover:text-foreground",
               )}
             >
               {item.label}

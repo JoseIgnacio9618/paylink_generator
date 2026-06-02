@@ -29,7 +29,8 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
     <PageFrame
       eyebrow="Historial"
       title="Estado de los cobros"
-      description={`${getPaylinkScopeDescription(currentUser)} Desde aquí puedes copiar el checkout, abrir el pago y sincronizar manualmente cualquier transacción con MONEI.`}
+      description={`${getPaylinkScopeDescription(currentUser)} Puedes abrir, copiar y sincronizar pagos desde aquí.`}
+      headerMode="none"
     >
       <PaylinksTable paylinks={paylinks} />
     </PageFrame>

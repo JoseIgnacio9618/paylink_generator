@@ -17,7 +17,8 @@ export default async function SettingsPage() {
     <PageFrame
       eyebrow="Configuración"
       title="Ajustes de integración"
-      description="Edita MONEI, SMTP, moneda, redirects y plantillas desde una pantalla dedicada en lugar de mezclarlo con la operativa diaria."
+      description="Gestiona MONEI, SMTP, moneda, redirects y plantillas."
+      headerMode="none"
     >
       <SettingsForm settings={settings} accountSnapshot={accountSnapshot} />
     </PageFrame>

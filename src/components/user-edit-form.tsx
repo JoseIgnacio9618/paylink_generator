@@ -4,10 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  dangerButtonClassName,
   Field,
   NoticeBanner,
+  primaryButtonClassName,
   SectionCard,
   SectionHeading,
+  secondaryButtonClassName,
 } from "@/components/panel-ui";
 import {
   SelectField,
@@ -133,7 +136,6 @@ export function UserEditForm({
       <SectionHeading
         eyebrow="Edición"
         title={`Editar ${user.displayName}`}
-        description="Aquí modificas la cuenta concreta. Puedes cambiar sus credenciales, el estado de acceso, su rol y si tiene visibilidad global de pagos."
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-muted">
@@ -207,15 +209,12 @@ export function UserEditForm({
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex items-center justify-center rounded-2xl bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-65"
+            className={primaryButtonClassName}
           >
             {isSaving ? "Guardando..." : "Guardar cambios"}
           </button>
 
-          <Link
-            href="/usuarios/existentes"
-            className="inline-flex items-center justify-center rounded-2xl border border-border px-5 py-3.5 text-sm font-semibold text-foreground hover:border-accent hover:text-accent"
-          >
+          <Link href="/usuarios/existentes" className={secondaryButtonClassName}>
             Volver al listado
           </Link>
 
@@ -223,7 +222,7 @@ export function UserEditForm({
             type="button"
             onClick={deleteCurrentUser}
             disabled={isDeleting || user.id === currentUserId}
-            className="inline-flex items-center justify-center rounded-2xl border border-rose-200 px-5 py-3.5 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className={dangerButtonClassName}
           >
             {isDeleting ? "Eliminando..." : "Eliminar usuario"}
           </button>

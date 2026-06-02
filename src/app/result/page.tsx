@@ -47,22 +47,22 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   const challengeResult = (params.cr ?? "").trim().toUpperCase();
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-12">
-      <div className="w-full max-w-xl rounded-[2rem] border border-white/80 bg-surface/90 p-8 text-center shadow-[var(--shadow)]">
+    <main className="mx-auto flex w-full max-w-[96rem] flex-1 items-center justify-center px-4 py-12 sm:px-6 lg:px-10">
+      <div className="w-full max-w-2xl rounded-[2.4rem] border border-border/70 bg-[linear-gradient(145deg,rgba(255,249,241,0.94),rgba(234,223,207,0.76))] p-8 text-center shadow-[var(--shadow)] dark:bg-[linear-gradient(145deg,rgba(24,29,36,0.95),rgba(36,42,51,0.9))]">
         <p className="font-mono text-xs uppercase tracking-[0.24em] text-accent">
           Estado del checkout
         </p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground">
+        <h1 className="mt-5 font-[family:var(--font-display)] text-5xl font-semibold tracking-[-0.05em] text-foreground">
           {message.title}
         </h1>
-        <p className="mt-4 text-base leading-7 text-muted">{message.text}</p>
+        <p className="mt-5 text-base leading-8 text-muted">{message.text}</p>
         {challengeResult === "SUCCESS" ? (
-          <p className="mt-4 text-sm leading-6 text-muted">
+          <p className="mt-5 text-sm leading-7 text-muted">
             La autenticación 3DS o el challenge del banco terminó correctamente, pero eso no garantiza por sí solo que el pago final se haya aprobado.
           </p>
         ) : null}
         {providerMessage ? (
-          <p className="mt-4 rounded-2xl border border-border bg-surface px-4 py-3 text-sm leading-6 text-muted">
+          <p className="mt-6 rounded-[1.5rem] border border-border/70 bg-surface/88 px-4 py-3.5 text-sm leading-7 text-muted">
             Mensaje devuelto por MONEI: {providerMessage}
           </p>
         ) : null}

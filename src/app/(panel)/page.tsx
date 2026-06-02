@@ -15,8 +15,6 @@ export default async function HomePage() {
 
   return (
     <OverviewPage
-      settings={settings}
-      currentUser={currentUser}
       paylinks={paylinks}
       warnings={warnings}
     />

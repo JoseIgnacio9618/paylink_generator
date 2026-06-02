@@ -8,8 +8,11 @@ import type { MoneiCheckoutSnapshot, SettingsRecord } from "@/lib/types";
 import { cn, formatPaymentMethodLabel, formatPaymentMethodList } from "@/lib/utils";
 import {
   Field,
+  InfoButton,
+  InfoModal,
   Label,
   NoticeBanner,
+  primaryButtonClassName,
   SectionCard,
   SectionHeading,
   TextareaField,
@@ -224,11 +227,10 @@ export function SettingsForm({
       <SectionHeading
         eyebrow="Configuración"
         title="Ajustes de la aplicación"
-        description="Todo queda guardado en SQLite. Los valores del .env sirven como semilla inicial y luego puedes gestionarlos desde aquí."
       />
 
       {accountSnapshot ? (
-        <div className="mt-6 rounded-[1.5rem] border border-border bg-surface-strong/70 p-4">
+        <div className="mt-6 rounded-[1.7rem] border border-border/70 bg-surface/94 p-5 shadow-[0_14px_28px_rgba(58,44,34,0.06)] dark:bg-background/42">
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
             Estado de la cuenta MONEI
           </p>
@@ -281,7 +283,7 @@ export function SettingsForm({
           />
         </div>
         {form.baseUrl.trim() && !baseUrlLooksPublic ? (
-          <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50/90 px-4 py-4 text-sm leading-6 text-amber-900">
+          <div className="rounded-[1.4rem] border border-amber-300/75 bg-amber-50/95 px-4 py-4 text-sm leading-6 text-amber-900 dark:border-amber-700/45 dark:bg-amber-950/30 dark:text-amber-100">
             La `Base URL` actual no es pública. Si mantienes `localhost` o `127.0.0.1`, MONEI no podrá llamar al webhook ni cerrar bien el flujo final del pago. Para pruebas usa una URL pública o un túnel como `ngrok` o `Cloudflare Tunnel`.
           </div>
         ) : null}
@@ -361,11 +363,11 @@ export function SettingsForm({
                     }))
                   }
                   className={cn(
-                    "rounded-full border px-3 py-2 text-sm font-medium",
+                    "rounded-full border px-3.5 py-2.5 text-sm font-medium shadow-[0_10px_18px_rgba(58,44,34,0.05)] transition-all",
                     checked
                       ? "border-accent bg-accent text-white"
                       : available
-                        ? "border-border bg-surface text-foreground hover:border-accent/40"
+                        ? "border-border/75 bg-surface text-foreground hover:-translate-y-0.5 hover:border-accent/40"
                         : "cursor-not-allowed border-border/60 bg-surface/55 text-muted/70 opacity-60",
                   )}
                 >
@@ -381,7 +383,7 @@ export function SettingsForm({
           ) : null}
         </div>
 
-        <div className="rounded-[1.5rem] border border-border bg-surface-strong/70 p-4">
+        <div className="rounded-[1.7rem] border border-border/70 bg-surface/94 p-5 shadow-[0_14px_28px_rgba(58,44,34,0.06)] dark:bg-background/42">
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
             Redirecciones del checkout
           </p>
@@ -410,7 +412,7 @@ export function SettingsForm({
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] border border-border bg-surface-strong/70 p-4">
+        <div className="rounded-[1.7rem] border border-border/70 bg-surface/94 p-5 shadow-[0_14px_28px_rgba(58,44,34,0.06)] dark:bg-background/42">
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
             SMTP y plantillas
           </p>
@@ -502,97 +504,36 @@ export function SettingsForm({
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex items-center justify-center rounded-2xl border border-accent bg-surface px-5 py-3.5 text-sm font-semibold text-accent hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-65"
+          className={primaryButtonClassName}
         >
           {isSaving ? "Guardando..." : "Guardar configuración"}
         </button>
       </form>
 
       <InfoModal
-        info={activeInfoContent}
+        title={activeInfoContent?.title}
         isOpen={Boolean(activeInfoContent)}
         onClose={() => setActiveInfo(null)}
-      />
+      >
+        {activeInfoContent ? (
+          <div className="space-y-5">
+            <div className="rounded-[1.35rem] border border-border/70 bg-background/38 p-4">
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
+                Qué es
+              </p>
+              <p className="mt-2 text-sm leading-7 text-foreground">{activeInfoContent.what}</p>
+            </div>
+
+            <div className="rounded-[1.35rem] border border-border/70 bg-background/38 p-4">
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
+                Dónde obtenerlo
+              </p>
+              <p className="mt-2 text-sm leading-7 text-foreground">{activeInfoContent.where}</p>
+            </div>
+          </div>
+        ) : null}
+      </InfoModal>
     </SectionCard>
-  );
-}
-
-function InfoButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-border bg-surface-strong text-[11px] font-semibold text-muted hover:border-accent/45 hover:text-accent"
-      aria-label="Ver ayuda del campo"
-      title="Ver ayuda del campo"
-    >
-      i
-    </button>
-  );
-}
-
-function InfoModal({
-  info,
-  isOpen,
-  onClose,
-}: {
-  info: InfoDefinition | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  if (!isOpen || !info) {
-    return null;
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/36 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-[1.75rem] border border-border bg-surface p-6 shadow-[var(--shadow)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-mono text-xs uppercase tracking-[0.24em] text-accent">
-              Ayuda del campo
-            </p>
-            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
-              {info.title}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex size-9 items-center justify-center rounded-full border border-border bg-surface-strong text-sm text-muted hover:border-accent/45 hover:text-accent"
-            aria-label="Cerrar ayuda"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="mt-6 space-y-5">
-          <div className="rounded-[1.25rem] border border-border bg-surface-strong/60 p-4">
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
-              Qué es
-            </p>
-            <p className="mt-2 text-sm leading-7 text-foreground">{info.what}</p>
-          </div>
-
-          <div className="rounded-[1.25rem] border border-border bg-surface-strong/60 p-4">
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
-              Dónde obtenerlo
-            </p>
-            <p className="mt-2 text-sm leading-7 text-foreground">{info.where}</p>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center rounded-2xl border border-accent bg-surface px-5 py-3 text-sm font-semibold text-accent hover:bg-accent hover:text-white"
-          >
-            Entendido
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 

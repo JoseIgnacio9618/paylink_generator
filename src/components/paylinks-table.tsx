@@ -5,9 +5,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { StatusBadge } from "@/components/status-badge";
 import {
   NoticeBanner,
+  primaryButtonClassName,
   SectionCard,
   SectionHeading,
+  secondaryButtonClassName,
   inputClassName,
+  warmButtonClassName,
 } from "@/components/panel-ui";
 import { canOpenCheckout, canRecreatePaylink } from "@/lib/paylink-checkout";
 import type { PaginatedPaylinksResult } from "@/lib/types";
@@ -143,15 +146,14 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
       <SectionHeading
         eyebrow="Historial"
         title="Links y estados de pago"
-        description="Busca sobre todos los campos guardados, abre solo checkouts todavía reutilizables y recrea un nuevo link cuando un pago ya haya quedado en un estado final."
       />
 
-      <form className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_auto]" onSubmit={submitSearch}>
+      <form className="mt-6 grid gap-3 lg:grid-cols-[1fr_200px_auto]" onSubmit={submitSearch}>
         <input
           key={paylinks.query}
           name="q"
           defaultValue={paylinks.query}
-          placeholder="Buscar por concepto, importe, moneda, emails, estado, IDs, URL, fechas, payload, destinatarios y más"
+          placeholder="Buscar por concepto, cliente, teléfono, importe, moneda, emails, estado, IDs, URL, fechas, payload, destinatarios y más"
           className={inputClassName}
         />
         <select
@@ -165,17 +167,10 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
           <option value="100">100 por página</option>
         </select>
         <div className="flex gap-2">
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white hover:bg-accent-strong"
-          >
+          <button type="submit" className={primaryButtonClassName}>
             Buscar
           </button>
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-accent hover:text-accent"
-          >
+          <button type="button" onClick={clearSearch} className={secondaryButtonClassName}>
             Limpiar
           </button>
         </div>
@@ -195,10 +190,10 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
         <NoticeBanner notice={notice} />
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-border">
+      <div className="mt-6 overflow-hidden rounded-[1.8rem] border border-border/70 bg-surface/94 shadow-[0_16px_34px_rgba(58,44,34,0.07)] dark:bg-surface/58">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-border text-left">
-            <thead className="bg-surface-strong/90">
+            <thead className="bg-[rgba(234,223,207,0.96)] dark:bg-surface-strong/80">
               <tr className="text-xs uppercase tracking-[0.18em] text-muted">
                 <th className="px-4 py-4 font-medium">Concepto</th>
                 <th className="px-4 py-4 font-medium">Importe</th>
@@ -208,7 +203,7 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                 <th className="px-4 py-4 font-medium">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border bg-surface/65">
+            <tbody className="divide-y divide-border bg-surface/96 dark:bg-surface/58">
               {paylinks.items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted">
@@ -221,15 +216,24 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                 paylinks.items.map((paylink) => {
                   const canOpenCurrentCheckout = canOpenCheckout(paylink);
                   const canRecreateCurrentPaylink = canRecreatePaylink(paylink);
+                  const customerDetails = [
+                    paylink.customerName ? `Cliente: ${paylink.customerName}` : null,
+                    paylink.customerPhone ? `Tel: ${paylink.customerPhone}` : null,
+                  ].filter(Boolean) as string[];
 
                   return (
-                    <tr key={paylink.id} className="align-top">
+                    <tr key={paylink.id} className="align-top transition-colors hover:bg-background/45 dark:hover:bg-background/22">
                       <td className="px-4 py-4">
                         <div className="space-y-1">
                           <p className="font-semibold text-foreground">{paylink.title}</p>
                           <p className="text-sm leading-6 text-muted">
                             {paylink.description || "Sin descripción"}
                           </p>
+                          {customerDetails.length > 0 ? (
+                            <p className="text-xs leading-5 text-muted">
+                              {customerDetails.join(" · ")}
+                            </p>
+                          ) : null}
                           {paylink.ownerDisplayName ? (
                             <p className="text-xs text-muted">
                               Propietario: {paylink.ownerDisplayName}
@@ -277,7 +281,7 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                               )
                             }
                             disabled={copyingId === paylink.id || !canOpenCurrentCheckout}
-                            className="rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+                            className={cn(secondaryButtonClassName, "rounded-[1rem] px-3 py-2 text-sm")}
                           >
                             {copyingId === paylink.id ? "Copiando..." : "Copiar link"}
                           </button>
@@ -286,9 +290,9 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                             target="_blank"
                             rel="noreferrer"
                             className={cn(
-                              "rounded-xl border px-3 py-2 text-center text-sm font-medium",
+                              "rounded-[1rem] border px-3 py-2 text-center text-sm font-medium shadow-[0_10px_20px_rgba(58,44,34,0.05)]",
                               canOpenCurrentCheckout
-                                ? "border-border text-foreground hover:border-accent hover:text-accent"
+                                ? "border-border/75 bg-surface/90 text-foreground hover:-translate-y-0.5 hover:border-accent hover:text-accent"
                                 : "pointer-events-none border-border/60 text-muted opacity-60",
                             )}
                           >
@@ -299,7 +303,9 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                               type="button"
                               onClick={() => recreatePaylink(paylink.id)}
                               disabled={recreatingId === paylink.id}
-                              className="rounded-xl border border-accent px-3 py-2 text-sm font-medium text-accent hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                              className={cn(
+                                "inline-flex items-center justify-center rounded-[1rem] border border-accent/50 bg-accent/8 px-3 py-2 text-sm font-semibold text-accent shadow-[0_10px_20px_rgba(154,79,36,0.08)] transition hover:-translate-y-0.5 hover:border-accent hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 dark:bg-accent/12",
+                              )}
                             >
                               {recreatingId === paylink.id ? "Recreando..." : "Recrear link"}
                             </button>
@@ -308,7 +314,7 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                             type="button"
                             onClick={() => syncPaylink(paylink.id)}
                             disabled={syncingId === paylink.id}
-                            className="rounded-xl bg-accent-warm px-3 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                            className={cn(warmButtonClassName, "rounded-[1rem] px-3 py-2 text-sm")}
                           >
                             {syncingId === paylink.id ? "Sincronizando..." : "Sincronizar"}
                           </button>
@@ -331,20 +337,10 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => changePage(paylinks.page - 1)}
-          disabled={paylinks.page <= 1}
-          className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <button type="button" onClick={() => changePage(paylinks.page - 1)} disabled={paylinks.page <= 1} className={secondaryButtonClassName}>
           Página anterior
         </button>
-        <button
-          type="button"
-          onClick={() => changePage(paylinks.page + 1)}
-          disabled={paylinks.page >= paylinks.totalPages}
-          className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <button type="button" onClick={() => changePage(paylinks.page + 1)} disabled={paylinks.page >= paylinks.totalPages} className={secondaryButtonClassName}>
           Página siguiente
         </button>
       </div>

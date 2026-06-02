@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { SectionCard, SectionHeading } from "@/components/panel-ui";
+import {
+  SectionCard,
+  SectionHeading,
+  inputClassName,
+  secondaryButtonClassName,
+} from "@/components/panel-ui";
 import type { PaginatedUsersResult } from "@/lib/types";
 
 export function UsersExistingManagement({ users }: { users: PaginatedUsersResult }) {
@@ -33,7 +38,6 @@ export function UsersExistingManagement({ users }: { users: PaginatedUsersResult
       <SectionHeading
         eyebrow="Gestión"
         title="Usuarios existentes"
-        description="Aquí ves un resumen paginado de las cuentas ya creadas. Entra al detalle de cada una para editar credenciales, rol, activación y permiso de visibilidad de pagos."
       />
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
@@ -45,7 +49,7 @@ export function UsersExistingManagement({ users }: { users: PaginatedUsersResult
         <select
           value={String(users.pageSize)}
           onChange={(event) => changePageSize(event.target.value)}
-          className="rounded-full border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
+          className={inputClassName}
         >
           <option value="5">5 por página</option>
           <option value="10">10 por página</option>
@@ -56,23 +60,25 @@ export function UsersExistingManagement({ users }: { users: PaginatedUsersResult
 
       <div className="mt-6 space-y-4">
         {users.items.length === 0 ? (
-          <div className="rounded-[1.5rem] border border-border bg-surface-strong/40 px-5 py-8 text-center text-sm text-muted">
+          <div className="rounded-[1.5rem] border border-border/70 bg-surface/90 px-5 py-8 text-center text-sm text-muted dark:bg-surface-strong/40">
             No hay usuarios en esta página.
           </div>
         ) : (
           users.items.map((user) => (
             <div
               key={user.id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-[1.6rem] border border-border bg-surface-strong/45 p-5"
+              className="flex flex-wrap items-center justify-between gap-4 rounded-[1.8rem] border border-border/70 bg-surface/94 p-5 shadow-[0_16px_30px_rgba(58,44,34,0.06)] dark:bg-background/36"
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-lg font-semibold text-foreground">{user.displayName}</p>
-                  <span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                  <p className="font-[family:var(--font-display)] text-2xl font-semibold tracking-[-0.04em] text-foreground">
+                    {user.displayName}
+                  </p>
+                  <span className="rounded-full border border-border/75 bg-surface px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                     {user.role}
                   </span>
                   {!user.active ? (
-                    <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-rose-700">
+                    <span className="rounded-full border border-rose-300/75 bg-rose-50/92 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-rose-700">
                       Inactivo
                     </span>
                   ) : null}
@@ -93,7 +99,7 @@ export function UsersExistingManagement({ users }: { users: PaginatedUsersResult
 
               <Link
                 href={`/usuarios/${user.id}`}
-                className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-accent hover:text-accent"
+                className={secondaryButtonClassName}
               >
                 Editar
               </Link>
@@ -103,20 +109,10 @@ export function UsersExistingManagement({ users }: { users: PaginatedUsersResult
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => changePage(users.page - 1)}
-          disabled={users.page <= 1}
-          className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <button type="button" onClick={() => changePage(users.page - 1)} disabled={users.page <= 1} className={secondaryButtonClassName}>
           Página anterior
         </button>
-        <button
-          type="button"
-          onClick={() => changePage(users.page + 1)}
-          disabled={users.page >= users.totalPages}
-          className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <button type="button" onClick={() => changePage(users.page + 1)} disabled={users.page >= users.totalPages} className={secondaryButtonClassName}>
           Página siguiente
         </button>
       </div>

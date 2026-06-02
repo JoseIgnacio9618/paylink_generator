@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Field, NoticeBanner, SectionCard, SectionHeading } from "@/components/panel-ui";
+import {
+  Field,
+  NoticeBanner,
+  SectionCard,
+  SectionHeading,
+  primaryButtonClassName,
+} from "@/components/panel-ui";
 
 type Notice = {
   tone: "success" | "error";
@@ -51,35 +57,24 @@ export function LoginForm() {
       <SectionHeading
         eyebrow="Acceso"
         title="Inicia sesión"
-        description="Accede con tu usuario y contraseña para entrar al panel."
       />
 
       <form className="mt-6 space-y-4" onSubmit={submit}>
+        <Field label="Usuario" name="username" value={username} onChange={setUsername} />
         <Field
-          label="Usuario"
-          name="username"
-          value={username}
-          onChange={setUsername}
+          label="Contraseña"
+          name="password"
+          type="password"
+          value={password}
+          onChange={setPassword}
         />
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted">
-            <span>Contraseña</span>
-          </label>
-          <input
-            name="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-foreground shadow-[0_1px_0_rgba(18,34,38,0.02)] outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
-          />
-        </div>
 
         <NoticeBanner notice={notice} />
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex w-full items-center justify-center rounded-2xl bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-65"
+          className={`${primaryButtonClassName} w-full`}
         >
           {isSubmitting ? "Entrando..." : "Entrar al panel"}
         </button>

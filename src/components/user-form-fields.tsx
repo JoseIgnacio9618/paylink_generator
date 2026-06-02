@@ -58,10 +58,10 @@ export function ToggleField({
         type="button"
         onClick={() => onChange(!checked)}
         disabled={disabled}
-        className={`inline-flex h-[50px] w-full items-center justify-center rounded-2xl border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`inline-flex h-[54px] w-full items-center justify-center rounded-[1.35rem] border px-4 text-sm font-semibold shadow-[0_12px_24px_rgba(58,44,34,0.05)] disabled:cursor-not-allowed disabled:opacity-50 ${
           checked
-            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-            : "border-border bg-surface text-muted"
+            ? "border-emerald-300/75 bg-emerald-50/92 text-emerald-900 dark:border-emerald-700/45 dark:bg-emerald-950/30 dark:text-emerald-100"
+            : "border-border/75 bg-surface text-muted"
         }`}
       >
         {checked ? "Sí" : "No"}
@@ -83,7 +83,7 @@ export function CheckboxField({
 }) {
   return (
     <label
-      className={`flex items-start gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-sm ${
+      className={`flex items-start gap-3 rounded-[1.35rem] border border-border/75 bg-surface/90 px-4 py-3.5 text-sm shadow-[0_10px_22px_rgba(58,44,34,0.05)] ${
         disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
       }`}
     >
@@ -111,7 +111,7 @@ export function SharedPaymentsField({
   const isUserRole = role === "user";
 
   return (
-    <div className="space-y-4 rounded-[1.5rem] border border-border bg-surface-strong/50 p-4">
+    <div className="space-y-4 rounded-[1.7rem] border border-border/70 bg-surface/94 p-5 shadow-[0_14px_28px_rgba(58,44,34,0.06)] dark:bg-background/38">
       <div>
         <p className="font-mono text-xs uppercase tracking-[0.22em] text-accent">
           Visibilidad de Pagos

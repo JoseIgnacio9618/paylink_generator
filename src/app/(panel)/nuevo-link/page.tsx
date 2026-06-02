@@ -17,7 +17,8 @@ export default async function NewPaylinkPage() {
     <PageFrame
       eyebrow="Nuevo link"
       title="Crear un link de pago"
-      description="Prepara un checkout hosted de MONEI para un producto o servicio y guarda el seguimiento del cobro dentro de tu propio espacio de usuario."
+      description="Crea un cobro nuevo y déjalo listo para seguimiento."
+      headerMode="none"
     >
       <CreatePaylinkForm settings={settings} accountSnapshot={accountSnapshot} />
     </PageFrame>

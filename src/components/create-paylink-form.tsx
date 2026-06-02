@@ -8,8 +8,11 @@ import type { MoneiCheckoutSnapshot, SettingsRecord } from "@/lib/types";
 import { cn, formatPaymentMethodLabel, formatPaymentMethodList } from "@/lib/utils";
 import {
   Field,
+  InfoPopover,
   Label,
   NoticeBanner,
+  primaryButtonClassName,
+  secondaryButtonClassName,
   SectionCard,
   SectionHeading,
   TextareaField,
@@ -120,35 +123,9 @@ export function CreatePaylinkForm({
       <SectionHeading
         eyebrow="Nuevo cobro"
         title="Crear link de pago"
-        description="Define el artículo o servicio, el importe y el email adicional que debe recibir el aviso cuando se confirme el pago."
       />
 
-      {accountSnapshot ? (
-        <div className="mt-6 rounded-[1.5rem] border border-border bg-surface-strong/70 p-4">
-          <p className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
-            Checkout real en MONEI
-          </p>
-          <p className="mt-3 text-sm leading-6 text-foreground">
-            Comercio visible: <strong>{accountSnapshot.merchantName || settings.merchantDisplayName}</strong>
-          </p>
-          <p className="mt-1 text-sm leading-6 text-muted">
-            Métodos activos ahora mismo:{" "}
-            {accountSnapshot.paymentMethods.length > 0
-              ? formatPaymentMethodList(accountSnapshot.paymentMethods)
-              : "ninguno compatible con esta app"}
-          </p>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            La disponibilidad final se recalcula cuando MONEI crea el checkout, así que puede variar según el importe, la moneda o el país.
-          </p>
-          {removedDefaultMethods.length > 0 ? (
-            <p className="mt-2 text-sm leading-6 text-amber-700">
-              Se han quitado de la selección inicial {formatPaymentMethodList(removedDefaultMethods)} porque no están activos en tu cuenta.
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
-      <form className="mt-6 space-y-4" onSubmit={createPaylink}>
+      <form className="mt-6 space-y-5" onSubmit={createPaylink}>
         <div className="grid gap-4 md:grid-cols-2">
           <Field
             label="Título"
@@ -177,6 +154,15 @@ export function CreatePaylinkForm({
             name="currency"
             placeholder="EUR"
             value={form.currency}
+            labelAction={
+              accountSnapshot ? (
+                <InfoPopover title="Checkout en MONEI">
+                  <p>
+                    La disponibilidad final de los métodos se recalcula al crear el checkout y puede variar según el importe, la moneda o el país.
+                  </p>
+                </InfoPopover>
+              ) : null
+            }
             onChange={(value) =>
               setForm((current) => ({ ...current, currency: value.toUpperCase() }))
             }
@@ -225,7 +211,31 @@ export function CreatePaylinkForm({
         </div>
 
         <div className="space-y-3">
-          <Label text="Métodos de pago permitidos" />
+          <div className="flex items-center justify-between gap-3">
+            <Label text="Métodos de pago permitidos" />
+            {accountSnapshot ? (
+              <InfoPopover title="Checkout real en MONEI">
+                <p>
+                  Comercio visible:{" "}
+                  <strong>{accountSnapshot.merchantName || settings.merchantDisplayName}</strong>
+                </p>
+                <p>
+                  Métodos activos ahora mismo:{" "}
+                  <strong>
+                    {accountSnapshot.paymentMethods.length > 0
+                      ? formatPaymentMethodList(accountSnapshot.paymentMethods)
+                      : "ninguno compatible con esta app"}
+                  </strong>
+                </p>
+                {removedDefaultMethods.length > 0 ? (
+                  <p>
+                    Se han quitado de la selección inicial{" "}
+                    <strong>{formatPaymentMethodList(removedDefaultMethods)}</strong> porque no están activos en tu cuenta.
+                  </p>
+                ) : null}
+              </InfoPopover>
+            ) : null}
+          </div>
           <div className="flex flex-wrap gap-2">
             {SUPPORTED_PAYMENT_METHODS.map((method) => {
               const checked = form.allowedPaymentMethods.includes(method);
@@ -247,11 +257,11 @@ export function CreatePaylinkForm({
                     }))
                   }
                   className={cn(
-                    "rounded-full border px-3 py-2 text-sm font-medium",
+                    "rounded-full border px-3.5 py-2.5 text-sm font-medium shadow-[0_10px_18px_rgba(58,44,34,0.05)] transition-all",
                     checked
                       ? "border-accent bg-accent text-white"
                       : available
-                        ? "border-border bg-surface text-foreground hover:border-accent/40"
+                        ? "border-border/75 bg-surface text-foreground hover:-translate-y-0.5 hover:border-accent/40"
                         : "cursor-not-allowed border-border/60 bg-surface/55 text-muted/70 opacity-60",
                   )}
                 >
@@ -272,7 +282,7 @@ export function CreatePaylinkForm({
         <button
           type="submit"
           disabled={isCreating || form.allowedPaymentMethods.length === 0}
-          className="inline-flex w-full items-center justify-center rounded-2xl bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-65"
+          className={`${primaryButtonClassName} w-full`}
         >
           {isCreating ? "Creando..." : "Crear link y registrar pago"}
         </button>
@@ -313,17 +323,17 @@ function CreationResultModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
-      <div className="w-full max-w-2xl rounded-[2rem] border border-border bg-surface p-6 shadow-[0_28px_90px_rgba(15,23,42,0.28)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl rounded-[2.1rem] border border-border/70 bg-surface/96 p-6 shadow-[0_28px_90px_rgba(15,23,42,0.28)]">
         <p className="font-mono text-xs uppercase tracking-[0.24em] text-accent">
           Pago creado
         </p>
-        <h3 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+        <h3 className="mt-3 font-[family:var(--font-display)] text-3xl font-semibold tracking-[-0.04em] text-foreground">
           El checkout ya está listo
         </h3>
         <p className="mt-3 text-sm leading-6 text-muted">{summary.message}</p>
 
-        <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-border bg-surface-strong/80 p-4 md:grid-cols-2">
+        <div className="mt-6 grid gap-4 rounded-[1.7rem] border border-border/70 bg-surface/94 p-4 md:grid-cols-2 dark:bg-background/42">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
               Pediste
@@ -354,7 +364,7 @@ function CreationResultModal({
             {summary.omittedPaymentMethods.map((item) => (
               <div
                 key={item.method}
-                className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-3"
+                className="rounded-[1.5rem] border border-amber-300/70 bg-amber-50/92 px-4 py-3"
               >
                 <p className="text-sm font-semibold text-amber-900">
                   {formatPaymentMethodLabel(item.method)}
@@ -364,7 +374,7 @@ function CreationResultModal({
             ))}
           </div>
         ) : (
-          <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <div className="mt-6 rounded-[1.5rem] border border-emerald-300/70 bg-emerald-50/92 px-4 py-3">
             <p className="text-sm leading-6 text-emerald-800">
               MONEI ha conservado todos los métodos que marcaste al crear este checkout.
             </p>
@@ -372,17 +382,10 @@ function CreationResultModal({
         )}
 
         <div className="mt-6 flex flex-wrap justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center rounded-2xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:border-accent hover:text-accent"
-          >
+          <button type="button" onClick={onClose} className={secondaryButtonClassName}>
             Seguir aquí
           </button>
-          <Link
-            href={summary.historyHref}
-            className="inline-flex items-center justify-center rounded-2xl bg-accent px-4 py-3 text-sm font-semibold text-white hover:bg-accent-strong"
-          >
+          <Link href={summary.historyHref} className={primaryButtonClassName}>
             Ir al histórico
           </Link>
         </div>

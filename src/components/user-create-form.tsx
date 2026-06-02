@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Field,
   NoticeBanner,
+  primaryButtonClassName,
   SectionCard,
   SectionHeading,
 } from "@/components/panel-ui";
@@ -96,7 +97,6 @@ export function UserCreateForm() {
       <SectionHeading
         eyebrow="Alta"
         title="Crear usuario"
-        description="Crea superadministradores y usuarios operativos. En los usuarios normales puedes decidir si verán solo sus propios cobros o también los del superadministrador y el resto de usuarios."
       />
 
       <form className="mt-6 space-y-6" onSubmit={submit}>
@@ -158,7 +158,7 @@ export function UserCreateForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center justify-center rounded-2xl bg-accent px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-65"
+          className={primaryButtonClassName}
         >
           {isSubmitting ? "Creando..." : "Crear usuario"}
         </button>
