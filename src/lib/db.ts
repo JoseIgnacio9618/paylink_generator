@@ -13,8 +13,14 @@ const globalForDatabase = globalThis as typeof globalThis & {
   __paylinkDb?: SQLiteDatabase;
 };
 
+function resolveDataDirectory() {
+  return process.env.DATA_DIR
+    ?? process.env.RAILWAY_VOLUME_MOUNT_PATH
+    ?? path.join(process.cwd(), "data");
+}
+
 function createDatabase() {
-  const dataDir = path.join(process.cwd(), "data");
+  const dataDir = resolveDataDirectory();
   fs.mkdirSync(dataDir, { recursive: true });
 
   const db = new Database(path.join(dataDir, "paylink.sqlite"));
