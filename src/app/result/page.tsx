@@ -9,7 +9,7 @@ type ResultPageProps = {
 const messages: Record<string, { title: string; text: string }> = {
   complete: {
     title: "Pago procesado",
-    text: "La operación ha terminado y estamos esperando la confirmación definitiva del webhook de MONEI.",
+    text: "Hemos recibido la operacion correctamente. En breve se actualizara el estado final del pago.",
   },
   failed: {
     title: "Pago no completado",
@@ -17,7 +17,7 @@ const messages: Record<string, { title: string; text: string }> = {
   },
   cancelled: {
     title: "Pago cancelado",
-    text: "El cliente ha cancelado el proceso antes de completar el checkout.",
+    text: "El proceso de pago se ha cancelado antes de completarse.",
   },
 };
 
@@ -43,7 +43,6 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   const params = await searchParams;
   const status = normalizeStatus(params.status);
   const message = messages[status] ?? messages.complete;
-  const providerMessage = params.message ? decodeURIComponent(params.message) : "";
   const challengeResult = (params.cr ?? "").trim().toUpperCase();
 
   return (
@@ -58,12 +57,8 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
         <p className="mt-5 text-base leading-8 text-muted">{message.text}</p>
         {challengeResult === "SUCCESS" ? (
           <p className="mt-5 text-sm leading-7 text-muted">
-            La autenticación 3DS o el challenge del banco terminó correctamente, pero eso no garantiza por sí solo que el pago final se haya aprobado.
-          </p>
-        ) : null}
-        {providerMessage ? (
-          <p className="mt-6 rounded-[1.5rem] border border-border/70 bg-surface/88 px-4 py-3.5 text-sm leading-7 text-muted">
-            Mensaje devuelto por MONEI: {providerMessage}
+            La verificacion adicional se ha completado correctamente. Te mostraremos el
+            resultado final en cuanto este disponible.
           </p>
         ) : null}
       </div>

@@ -187,15 +187,22 @@ function buildPaymentSuccessHtml(input: {
   `;
 }
 
+export function getPaymentNotificationRecipients(
+  settings: SettingsRecord,
+  paylink: Pick<PaylinkRecord, "recipientEmail">,
+) {
+  return uniqueEmails([
+    paylink.recipientEmail,
+    settings.notificationDefaultEmail,
+  ]);
+}
+
 export async function sendPaymentSuccessNotification(
   settings: SettingsRecord,
   paylink: PaylinkRecord,
   payment: Payment,
 ) {
-  const recipients = uniqueEmails([
-    paylink.recipientEmail,
-    settings.notificationDefaultEmail,
-  ]);
+  const recipients = getPaymentNotificationRecipients(settings, paylink);
 
   if (recipients.length === 0) {
     return {
@@ -217,6 +224,9 @@ export async function sendPaymentSuccessNotification(
     host: settings.smtpHost,
     port: settings.smtpPort,
     secure: settings.smtpSecure,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
     auth:
       settings.smtpUser || settings.smtpPass
         ? {
