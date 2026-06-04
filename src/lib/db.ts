@@ -98,6 +98,22 @@ function initializeDatabase(db: SQLiteDatabase) {
         created_at TEXT NOT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS notification_jobs (
+        id TEXT PRIMARY KEY,
+        job_type TEXT NOT NULL,
+        paylink_id TEXT NOT NULL,
+        monei_payment_id TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        available_at TEXT NOT NULL,
+        locked_at TEXT NOT NULL DEFAULT '',
+        sent_at TEXT NOT NULL DEFAULT '',
+        last_error TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (paylink_id, job_type)
+      );
+
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         username TEXT NOT NULL COLLATE NOCASE UNIQUE,

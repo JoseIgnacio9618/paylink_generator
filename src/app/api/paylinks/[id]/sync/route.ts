@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { sendPaymentSuccessNotification } from "@/lib/email";
 import { fetchPaymentStatus } from "@/lib/monei";
+import { queuePaymentSuccessNotification } from "@/lib/notification-jobs";
 import {
   applyPaymentUpdate,
   getPaylinkById,
-  markNotificationResult,
 } from "@/lib/paylinks";
 import { getSettings } from "@/lib/settings";
 import { getVisiblePaylinkOwnerIds } from "@/lib/users";
@@ -34,18 +33,7 @@ export async function POST(_request: Request, context: { params: Params }) {
     const updatedPaylink = applyPaymentUpdate(id, payment, "manual_sync");
 
     if (payment.status === "SUCCEEDED" && !updatedPaylink.notificationSentAt) {
-      const notification = await sendPaymentSuccessNotification(
-        settings,
-        updatedPaylink,
-        payment,
-      );
-
-      markNotificationResult(
-        id,
-        notification.sent
-          ? notification
-          : { error: notification.error, recipients: notification.recipients },
-      );
+      queuePaymentSuccessNotification(settings, updatedPaylink, payment);
     }
 
     return NextResponse.json({

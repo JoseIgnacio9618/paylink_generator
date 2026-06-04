@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
-import { after } from "next/server";
-import {
-  getPaymentNotificationRecipients,
-  sendPaymentSuccessNotification,
-} from "@/lib/email";
 import { paymentFromWebhook, verifyWebhookSignature } from "@/lib/monei";
+import { queuePaymentSuccessNotification } from "@/lib/notification-jobs";
 import {
   applyPaymentUpdate,
   getPaylinkByMoneiPaymentId,
-  markNotificationResult,
 } from "@/lib/paylinks";
 import { getSettings } from "@/lib/settings";
 
@@ -57,41 +52,10 @@ export async function POST(request: Request) {
     });
 
     if (payment.status === "SUCCEEDED" && !updatedPaylink.notificationSentAt) {
-      after(async () => {
-        try {
-          console.info("MONEI webhook email scheduled.", {
-            paymentId: payment.id,
-            paylinkId: paylink.id,
-          });
-          const notification = await sendPaymentSuccessNotification(
-            settings,
-            updatedPaylink,
-            payment,
-          );
-
-          markNotificationResult(
-            paylink.id,
-            notification.sent
-              ? notification
-              : { error: notification.error, recipients: notification.recipients },
-          );
-          console.info("MONEI webhook email finished.", {
-            paymentId: payment.id,
-            paylinkId: paylink.id,
-            sent: notification.sent,
-            recipients: notification.recipients.length,
-          });
-        } catch (error) {
-          const recipients = getPaymentNotificationRecipients(settings, updatedPaylink);
-          const message = error instanceof Error ? error.message : "SMTP delivery error.";
-
-          console.error("Webhook email delivery failed:", error);
-
-          markNotificationResult(paylink.id, {
-            error: message,
-            recipients,
-          });
-        }
+      queuePaymentSuccessNotification(settings, updatedPaylink, payment);
+      console.info("MONEI webhook email queued.", {
+        paymentId: payment.id,
+        paylinkId: paylink.id,
       });
     }
 
