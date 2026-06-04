@@ -16,7 +16,30 @@ function getRefundableAmount(payment: { amount?: number; refundedAmount?: number
   return Math.max(0, amount - refundedAmount);
 }
 
-export async function POST(_request: Request, context: { params: Params }) {
+async function getRequestedRefundAmount(request: Request) {
+  try {
+    const payload = (await request.json()) as { amount?: unknown };
+    const amount = payload.amount;
+
+    if (amount === undefined) {
+      return null;
+    }
+
+    if (typeof amount !== "number" || !Number.isInteger(amount) || amount <= 0) {
+      throw new Error("El importe del reembolso parcial no es válido.");
+    }
+
+    return amount;
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+export async function POST(request: Request, context: { params: Params }) {
   try {
     const currentUser = await getCurrentUser();
 
@@ -54,6 +77,7 @@ export async function POST(_request: Request, context: { params: Params }) {
     }
 
     const refundableAmount = getRefundableAmount(payment);
+    const requestedAmount = await getRequestedRefundAmount(request);
 
     if (refundableAmount <= 0) {
       return NextResponse.json(
@@ -62,8 +86,17 @@ export async function POST(_request: Request, context: { params: Params }) {
       );
     }
 
+    const refundAmount = requestedAmount ?? refundableAmount;
+
+    if (refundAmount > refundableAmount) {
+      return NextResponse.json(
+        { error: "El importe solicitado supera el importe pendiente de reembolsar." },
+        { status: 400 },
+      );
+    }
+
     const refundedPayment = await refundPayment(settings, paylink.moneiPaymentId, {
-      amount: refundableAmount,
+      amount: refundAmount,
       refundReason: "requested_by_customer",
     });
 
@@ -72,13 +105,13 @@ export async function POST(_request: Request, context: { params: Params }) {
     console.info("Manual refund applied.", {
       paylinkId: paylink.id,
       paymentId: paylink.moneiPaymentId,
-      refundedAmount: refundableAmount,
+      refundedAmount: refundAmount,
       status: refundedPayment.status,
     });
 
     return NextResponse.json({
       paylink: updatedPaylink,
-      refundedAmount: refundableAmount,
+      refundedAmount: refundAmount,
     });
   } catch (error) {
     return NextResponse.json(

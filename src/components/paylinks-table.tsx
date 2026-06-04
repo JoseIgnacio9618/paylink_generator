@@ -15,7 +15,7 @@ import {
 } from "@/components/panel-ui";
 import { canOpenCheckout, canRecreatePaylink } from "@/lib/paylink-checkout";
 import type { PaginatedPaylinksResult } from "@/lib/types";
-import { cn, formatCurrency } from "@/lib/utils";
+import { amountToCents, cn, formatCurrency } from "@/lib/utils";
 
 type Notice = {
   tone: "success" | "error";
@@ -25,7 +25,8 @@ type Notice = {
 type RefundDialogState = {
   id: string;
   title: string;
-  amountLabel: string;
+  amountCents: number;
+  currency: string;
   status: string;
 };
 
@@ -47,6 +48,8 @@ export function PaylinksTable({
   const [recreatingId, setRecreatingId] = useState<string | null>(null);
   const [refundingId, setRefundingId] = useState<string | null>(null);
   const [refundDialog, setRefundDialog] = useState<RefundDialogState | null>(null);
+  const [refundMode, setRefundMode] = useState<"full" | "partial">("full");
+  const [partialRefundAmount, setPartialRefundAmount] = useState("");
 
   async function syncPaylink(id: string) {
     setSyncingId(id);
@@ -102,10 +105,32 @@ export function PaylinksTable({
       return;
     }
 
+    const payload: { amount?: number } = {};
+
+    if (refundMode === "partial") {
+      const parsedAmount = amountToCents(partialRefundAmount);
+
+      if (!parsedAmount || parsedAmount <= 0) {
+        setNotice({
+          tone: "error",
+          text: "Introduce un importe válido para el reembolso parcial.",
+        });
+        return;
+      }
+
+      payload.amount = parsedAmount;
+    }
+
     setRefundingId(refundDialog.id);
 
     try {
-      const response = await fetch(`/api/paylinks/${refundDialog.id}/refund`, { method: "POST" });
+      const response = await fetch(`/api/paylinks/${refundDialog.id}/refund`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
       const result = await response.json();
 
       if (!response.ok) {
@@ -114,9 +139,14 @@ export function PaylinksTable({
 
       setNotice({
         tone: "success",
-        text: "Reembolso solicitado correctamente en MONEI.",
+        text:
+          refundMode === "partial"
+            ? "Reembolso parcial solicitado correctamente en MONEI."
+            : "Reembolso solicitado correctamente en MONEI.",
       });
       setRefundDialog(null);
+      setRefundMode("full");
+      setPartialRefundAmount("");
       startTransition(() => router.refresh());
     } catch (error) {
       setNotice({
@@ -373,12 +403,17 @@ export function PaylinksTable({
                             <button
                               type="button"
                               onClick={() =>
-                                setRefundDialog({
-                                  id: paylink.id,
-                                  title: paylink.title,
-                                  amountLabel: formatCurrency(paylink.amountCents, paylink.currency),
-                                  status: paylink.moneiStatus,
-                                })
+                                {
+                                  setRefundDialog({
+                                    id: paylink.id,
+                                    title: paylink.title,
+                                    amountCents: paylink.amountCents,
+                                    currency: paylink.currency,
+                                    status: paylink.moneiStatus,
+                                  });
+                                  setRefundMode("full");
+                                  setPartialRefundAmount("");
+                                }
                               }
                               disabled={refundingId === paylink.id}
                               className={cn(dangerButtonClassName, "rounded-[1rem] px-3 py-2 text-sm")}
@@ -434,11 +469,52 @@ export function PaylinksTable({
                 Concepto: <strong className="text-foreground">{refundDialog.title}</strong>
               </p>
               <p>
-                Importe original: <strong className="text-foreground">{refundDialog.amountLabel}</strong>
+                Importe original: <strong className="text-foreground">{formatCurrency(refundDialog.amountCents, refundDialog.currency)}</strong>
               </p>
               <p>
                 Estado actual: <strong className="text-foreground">{refundDialog.status}</strong>
               </p>
+              <div className="space-y-3 rounded-[1.2rem] border border-border/75 bg-background/35 px-4 py-4">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="refundMode"
+                    checked={refundMode === "full"}
+                    onChange={() => setRefundMode("full")}
+                    className="mt-1"
+                  />
+                  <span>
+                    <strong className="text-foreground">Reembolso completo</strong>
+                    <span className="block text-muted">
+                      Devuelve todo el importe pendiente que MONEI permita reembolsar.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="refundMode"
+                    checked={refundMode === "partial"}
+                    onChange={() => setRefundMode("partial")}
+                    className="mt-1"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <strong className="text-foreground">Reembolso parcial</strong>
+                    <span className="mt-1 block text-muted">
+                      Introduce el importe exacto que quieres devolver ahora.
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={partialRefundAmount}
+                      onChange={(event) => setPartialRefundAmount(event.target.value)}
+                      placeholder="Ej. 12,50"
+                      disabled={refundMode !== "partial"}
+                      className="mt-3 w-full rounded-[1rem] border border-border/80 bg-surface/96 px-3 py-2.5 text-sm font-medium text-foreground outline-none focus:border-accent/55 focus:ring-4 focus:ring-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </span>
+                </label>
+              </div>
               <p className="rounded-[1.2rem] border border-rose-200/80 bg-rose-50/92 px-4 py-3 text-rose-900">
                 Esta operación no se puede deshacer desde esta aplicación. Antes de continuar,
                 confirma que realmente quieres devolver este pago. Si ya existe un reembolso
@@ -449,7 +525,11 @@ export function PaylinksTable({
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setRefundDialog(null)}
+                onClick={() => {
+                  setRefundDialog(null);
+                  setRefundMode("full");
+                  setPartialRefundAmount("");
+                }}
                 disabled={refundingId === refundDialog.id}
                 className={secondaryButtonClassName}
               >
