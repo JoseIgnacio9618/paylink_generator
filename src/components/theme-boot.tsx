@@ -1,25 +1,53 @@
-"use client";
+import Script from "next/script";
 
-import { useEffect } from "react";
+const themeBootScript = `
+(() => {
+  const COOKIE_KEY = "theme";
+  const STORAGE_KEY = "theme";
 
-type Theme = "light" | "dark";
+  const readCookieTheme = () => {
+    const match = document.cookie.match(/(?:^|; )theme=(dark|light)(?:;|$)/);
+    return match ? match[1] : null;
+  };
 
-function resolveTheme(): Theme {
-  const stored = window.localStorage.getItem("theme");
+  const persistTheme = (theme) => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, theme);
+    } catch {}
 
-  if (stored === "dark" || stored === "light") {
-    return stored;
+    document.cookie = COOKIE_KEY + "=" + theme + "; path=/; max-age=31536000; samesite=lax";
+  };
+
+  let theme = null;
+
+  try {
+    const storedTheme = window.localStorage.getItem(STORAGE_KEY);
+    if (storedTheme === "dark" || storedTheme === "light") {
+      theme = storedTheme;
+    }
+  } catch {}
+
+  if (theme !== "dark" && theme !== "light") {
+    const cookieTheme = readCookieTheme();
+    if (cookieTheme === "dark" || cookieTheme === "light") {
+      theme = cookieTheme;
+    }
   }
 
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
+  if (theme !== "dark" && theme !== "light") {
+    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+  persistTheme(theme);
+})();
+`;
 
 export function ThemeBoot() {
-  useEffect(() => {
-    const theme = resolveTheme();
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-  }, []);
-
-  return null;
+  return (
+    <Script id="theme-boot" strategy="beforeInteractive">
+      {themeBootScript}
+    </Script>
+  );
 }
