@@ -79,6 +79,8 @@ export interface PaylinkRecord {
   paymentUrl: string;
   nextActionType: string;
   lastPayload: string;
+  refundedAmountCents: number;
+  refundableAmountCents: number;
   notificationSentAt: string;
   notificationRecipients: string[];
   notificationError: string;

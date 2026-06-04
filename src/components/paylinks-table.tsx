@@ -28,6 +28,8 @@ type RefundDialogState = {
   amountCents: number;
   currency: string;
   status: string;
+  refundedAmountCents: number;
+  refundableAmountCents: number;
 };
 
 const REFUNDABLE_STATUSES = new Set(["SUCCEEDED", "PARTIALLY_REFUNDED"]);
@@ -50,6 +52,7 @@ export function PaylinksTable({
   const [refundDialog, setRefundDialog] = useState<RefundDialogState | null>(null);
   const [refundMode, setRefundMode] = useState<"full" | "partial">("full");
   const [partialRefundAmount, setPartialRefundAmount] = useState("");
+  const [refundDialogError, setRefundDialogError] = useState<string | null>(null);
 
   async function syncPaylink(id: string) {
     setSyncingId(id);
@@ -106,15 +109,18 @@ export function PaylinksTable({
     }
 
     const payload: { amount?: number } = {};
+    setRefundDialogError(null);
 
     if (refundMode === "partial") {
       const parsedAmount = amountToCents(partialRefundAmount);
 
       if (!parsedAmount || parsedAmount <= 0) {
-        setNotice({
-          tone: "error",
-          text: "Introduce un importe válido para el reembolso parcial.",
-        });
+        setRefundDialogError("Introduce un importe válido para el reembolso parcial.");
+        return;
+      }
+
+      if (parsedAmount > refundDialog.refundableAmountCents) {
+        setRefundDialogError("El importe parcial no puede superar el importe pendiente por reembolsar.");
         return;
       }
 
@@ -149,10 +155,9 @@ export function PaylinksTable({
       setPartialRefundAmount("");
       startTransition(() => router.refresh());
     } catch (error) {
-      setNotice({
-        tone: "error",
-        text: error instanceof Error ? error.message : "No se pudo tramitar el reembolso.",
-      });
+      setRefundDialogError(
+        error instanceof Error ? error.message : "No se pudo tramitar el reembolso.",
+      );
     } finally {
       setRefundingId(null);
     }
@@ -410,9 +415,12 @@ export function PaylinksTable({
                                     amountCents: paylink.amountCents,
                                     currency: paylink.currency,
                                     status: paylink.moneiStatus,
+                                    refundedAmountCents: paylink.refundedAmountCents,
+                                    refundableAmountCents: paylink.refundableAmountCents,
                                   });
                                   setRefundMode("full");
                                   setPartialRefundAmount("");
+                                  setRefundDialogError(null);
                                 }
                               }
                               disabled={refundingId === paylink.id}
@@ -474,13 +482,32 @@ export function PaylinksTable({
               <p>
                 Estado actual: <strong className="text-foreground">{refundDialog.status}</strong>
               </p>
+              {refundDialog.refundedAmountCents > 0 ? (
+                <div className="rounded-[1.2rem] border border-sky-200/80 bg-sky-50/92 px-4 py-3 text-sky-900">
+                  <p>
+                    Ya reembolsado:{" "}
+                    <strong className="text-foreground">
+                      {formatCurrency(refundDialog.refundedAmountCents, refundDialog.currency)}
+                    </strong>
+                  </p>
+                  <p>
+                    Pendiente por reembolsar:{" "}
+                    <strong className="text-foreground">
+                      {formatCurrency(refundDialog.refundableAmountCents, refundDialog.currency)}
+                    </strong>
+                  </p>
+                </div>
+              ) : null}
               <div className="space-y-3 rounded-[1.2rem] border border-border/75 bg-background/35 px-4 py-4">
                 <label className="flex items-start gap-3">
                   <input
                     type="radio"
                     name="refundMode"
                     checked={refundMode === "full"}
-                    onChange={() => setRefundMode("full")}
+                    onChange={() => {
+                      setRefundMode("full");
+                      setRefundDialogError(null);
+                    }}
                     className="mt-1"
                   />
                   <span>
@@ -495,7 +522,10 @@ export function PaylinksTable({
                     type="radio"
                     name="refundMode"
                     checked={refundMode === "partial"}
-                    onChange={() => setRefundMode("partial")}
+                    onChange={() => {
+                      setRefundMode("partial");
+                      setRefundDialogError(null);
+                    }}
                     className="mt-1"
                   />
                   <span className="min-w-0 flex-1">
@@ -507,14 +537,26 @@ export function PaylinksTable({
                       type="text"
                       inputMode="decimal"
                       value={partialRefundAmount}
-                      onChange={(event) => setPartialRefundAmount(event.target.value)}
+                      onChange={(event) => {
+                        setPartialRefundAmount(event.target.value);
+                        setRefundDialogError(null);
+                      }}
                       placeholder="Ej. 12,50"
                       disabled={refundMode !== "partial"}
                       className="mt-3 w-full rounded-[1rem] border border-border/80 bg-surface/96 px-3 py-2.5 text-sm font-medium text-foreground outline-none focus:border-accent/55 focus:ring-4 focus:ring-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
                     />
+                    <span className="mt-2 block text-xs text-muted">
+                      Máximo disponible ahora:{" "}
+                      {formatCurrency(refundDialog.refundableAmountCents, refundDialog.currency)}
+                    </span>
                   </span>
                 </label>
               </div>
+              {refundDialogError ? (
+                <p className="rounded-[1.2rem] border border-rose-200/80 bg-rose-50/92 px-4 py-3 text-rose-900">
+                  {refundDialogError}
+                </p>
+              ) : null}
               <p className="rounded-[1.2rem] border border-rose-200/80 bg-rose-50/92 px-4 py-3 text-rose-900">
                 Esta operación no se puede deshacer desde esta aplicación. Antes de continuar,
                 confirma que realmente quieres devolver este pago. Si ya existe un reembolso
@@ -529,6 +571,7 @@ export function PaylinksTable({
                   setRefundDialog(null);
                   setRefundMode("full");
                   setPartialRefundAmount("");
+                  setRefundDialogError(null);
                 }}
                 disabled={refundingId === refundDialog.id}
                 className={secondaryButtonClassName}

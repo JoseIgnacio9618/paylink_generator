@@ -79,7 +79,29 @@ function normalizePhoneSearchValue(value: string) {
   return value.replace(/[\s()+-]/g, "");
 }
 
+function getRefundTotals(row: Pick<PaylinkRow, "amount_cents" | "last_payload">) {
+  try {
+    const payload = JSON.parse(row.last_payload) as { refundedAmount?: unknown };
+    const refundedAmount =
+      typeof payload.refundedAmount === "number" && payload.refundedAmount > 0
+        ? payload.refundedAmount
+        : 0;
+
+    return {
+      refundedAmountCents: refundedAmount,
+      refundableAmountCents: Math.max(0, row.amount_cents - refundedAmount),
+    };
+  } catch {
+    return {
+      refundedAmountCents: 0,
+      refundableAmountCents: row.amount_cents,
+    };
+  }
+}
+
 function mapPaylinkRow(row: PaylinkRow): PaylinkRecord {
+  const refundTotals = getRefundTotals(row);
+
   return {
     id: row.id,
     ownerUserId: row.owner_user_id,
@@ -102,6 +124,8 @@ function mapPaylinkRow(row: PaylinkRow): PaylinkRecord {
     paymentUrl: row.payment_url,
     nextActionType: row.next_action_type,
     lastPayload: row.last_payload,
+    refundedAmountCents: refundTotals.refundedAmountCents,
+    refundableAmountCents: refundTotals.refundableAmountCents,
     notificationSentAt: row.notification_sent_at,
     notificationRecipients: parseJsonArray(row.notification_recipients),
     notificationError: row.notification_error,
