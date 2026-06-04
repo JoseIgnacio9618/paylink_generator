@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { IBM_Plex_Mono, Space_Grotesk, Syne } from "next/font/google";
 import { ThemeBoot } from "@/components/theme-boot";
 import "./globals.css";
@@ -27,15 +28,21 @@ export const metadata: Metadata = {
   description: "Genera links de pago con MONEI y controla su estado desde un panel propio.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const storedTheme = cookieStore.get("theme")?.value;
+  const initialTheme = storedTheme === "light" ? "light" : "dark";
+
   return (
     <html
       lang="es"
+      data-theme={initialTheme}
       suppressHydrationWarning
+      style={{ colorScheme: initialTheme }}
       className={`${spaceGrotesk.variable} ${syne.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

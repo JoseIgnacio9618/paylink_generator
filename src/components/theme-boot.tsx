@@ -20,13 +20,6 @@ const themeBootScript = `
 
   let theme = null;
 
-  try {
-    const storedTheme = window.localStorage.getItem(STORAGE_KEY);
-    if (storedTheme === "dark" || storedTheme === "light") {
-      theme = storedTheme;
-    }
-  } catch {}
-
   if (theme !== "dark" && theme !== "light") {
     const cookieTheme = readCookieTheme();
     if (cookieTheme === "dark" || cookieTheme === "light") {
@@ -35,7 +28,16 @@ const themeBootScript = `
   }
 
   if (theme !== "dark" && theme !== "light") {
-    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    try {
+      const storedTheme = window.localStorage.getItem(STORAGE_KEY);
+      if (storedTheme === "dark" || storedTheme === "light") {
+        theme = storedTheme;
+      }
+    } catch {}
+  }
+
+  if (theme !== "dark" && theme !== "light") {
+    theme = "dark";
   }
 
   document.documentElement.dataset.theme = theme;
