@@ -70,8 +70,8 @@ const FIELD_INFO: Record<InfoKey, InfoDefinition> = {
   },
   defaultCurrency: {
     title: "Moneda por defecto",
-    what: "Es la moneda que se propone al crear nuevos links de pago.",
-    where: "Debes poner un código ISO 4217 de tres letras, por ejemplo `EUR`, `USD` o `GBP`.",
+    what: "Es la moneda fija con la que trabaja esta aplicación al crear nuevos links de pago.",
+    where: "En esta versión queda bloqueada en `EUR` para evitar configuraciones inconsistentes.",
   },
   callbackPath: {
     title: "Path del webhook",
@@ -278,6 +278,8 @@ export function SettingsForm({
             name="baseUrl"
             placeholder="https://tu-dominio.com"
             value={form.baseUrl}
+            type="url"
+            inputMode="url"
             onChange={(value) => setForm((current) => ({ ...current, baseUrl: value }))}
             labelAction={<InfoButton onClick={() => setActiveInfo("baseUrl")} />}
           />
@@ -289,19 +291,22 @@ export function SettingsForm({
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Field
-            label="Moneda por defecto"
-            name="defaultCurrency"
-            value={form.defaultCurrency}
-            onChange={(value) =>
-              setForm((current) => ({ ...current, defaultCurrency: value.toUpperCase() }))
-            }
-            labelAction={<InfoButton onClick={() => setActiveInfo("defaultCurrency")} />}
-          />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <Label text="Moneda por defecto" />
+              <InfoButton onClick={() => setActiveInfo("defaultCurrency")} />
+            </div>
+            <div className="flex h-[54px] items-center rounded-[1.35rem] border border-border/80 bg-surface/96 px-4 text-sm font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_14px_30px_rgba(58,44,34,0.08)] dark:bg-background/65">
+              EUR
+            </div>
+          </div>
           <Field
             label="Path del webhook"
             name="callbackPath"
             value={form.callbackPath}
+            required
+            pattern="^/\\S*$"
+            title="El path debe empezar por '/' y no contener espacios."
             onChange={(value) => setForm((current) => ({ ...current, callbackPath: value }))}
             labelAction={<InfoButton onClick={() => setActiveInfo("callbackPath")} />}
           />
@@ -310,6 +315,8 @@ export function SettingsForm({
             name="notificationDefaultEmail"
             placeholder="operaciones@tuempresa.com"
             value={form.notificationDefaultEmail}
+            type="email"
+            autoComplete="email"
             onChange={(value) =>
               setForm((current) => ({ ...current, notificationDefaultEmail: value }))
             }
@@ -322,6 +329,7 @@ export function SettingsForm({
             label="MONEI API key"
             name="moneiApiKey"
             value={form.moneiApiKey}
+            autoComplete="off"
             onChange={(value) => setForm((current) => ({ ...current, moneiApiKey: value }))}
             labelAction={<InfoButton onClick={() => setActiveInfo("moneiApiKey")} />}
           />
@@ -330,6 +338,7 @@ export function SettingsForm({
             name="moneiAccountId"
             placeholder="Opcional"
             value={form.moneiAccountId}
+            autoComplete="off"
             onChange={(value) =>
               setForm((current) => ({ ...current, moneiAccountId: value }))
             }
@@ -392,6 +401,8 @@ export function SettingsForm({
               label="Complete URL"
               name="completeUrl"
               value={form.completeUrl}
+              inputMode="url"
+              title="Introduce una URL válida o una ruta que empiece por '/'."
               onChange={(value) => setForm((current) => ({ ...current, completeUrl: value }))}
               labelAction={<InfoButton onClick={() => setActiveInfo("completeUrl")} />}
             />
@@ -399,6 +410,8 @@ export function SettingsForm({
               label="Fail URL"
               name="failUrl"
               value={form.failUrl}
+              inputMode="url"
+              title="Introduce una URL válida o una ruta que empiece por '/'."
               onChange={(value) => setForm((current) => ({ ...current, failUrl: value }))}
               labelAction={<InfoButton onClick={() => setActiveInfo("failUrl")} />}
             />
@@ -406,6 +419,8 @@ export function SettingsForm({
               label="Cancel URL"
               name="cancelUrl"
               value={form.cancelUrl}
+              inputMode="url"
+              title="Introduce una URL válida o una ruta que empiece por '/'."
               onChange={(value) => setForm((current) => ({ ...current, cancelUrl: value }))}
               labelAction={<InfoButton onClick={() => setActiveInfo("cancelUrl")} />}
             />
@@ -421,6 +436,8 @@ export function SettingsForm({
               label="SMTP host"
               name="smtpHost"
               value={form.smtpHost}
+              autoComplete="off"
+              title="El host SMTP no puede contener espacios."
               onChange={(value) => setForm((current) => ({ ...current, smtpHost: value }))}
               labelAction={<InfoButton onClick={() => setActiveInfo("smtpHost")} />}
             />
@@ -429,6 +446,8 @@ export function SettingsForm({
               name="smtpFrom"
               placeholder="no-reply@tuempresa.com"
               value={form.smtpFrom}
+              type="email"
+              autoComplete="email"
               onChange={(value) => setForm((current) => ({ ...current, smtpFrom: value }))}
               labelAction={<InfoButton onClick={() => setActiveInfo("smtpFrom")} />}
             />
@@ -436,6 +455,11 @@ export function SettingsForm({
               label="SMTP port"
               name="smtpPort"
               value={String(form.smtpPort)}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={65535}
+              step={1}
               onChange={(value) =>
                 setForm((current) => ({ ...current, smtpPort: Number(value) || 0 }))
               }
@@ -445,6 +469,7 @@ export function SettingsForm({
               label="Nombre remitente"
               name="smtpFromName"
               value={form.smtpFromName}
+              maxLength={120}
               onChange={(value) => setForm((current) => ({ ...current, smtpFromName: value }))}
               labelAction={<InfoButton onClick={() => setActiveInfo("smtpFromName")} />}
             />
@@ -452,12 +477,15 @@ export function SettingsForm({
               label="SMTP user"
               name="smtpUser"
               value={form.smtpUser}
+              autoComplete="username"
               onChange={(value) => setForm((current) => ({ ...current, smtpUser: value }))}
               labelAction={<InfoButton onClick={() => setActiveInfo("smtpUser")} />}
             />
             <Field
               label="SMTP password"
               name="smtpPass"
+              type="password"
+              autoComplete="current-password"
               value={form.smtpPass}
               onChange={(value) => setForm((current) => ({ ...current, smtpPass: value }))}
               labelAction={<InfoButton onClick={() => setActiveInfo("smtpPass")} />}
@@ -482,6 +510,8 @@ export function SettingsForm({
               label="Asunto del email"
               name="emailSubjectTemplate"
               value={form.emailSubjectTemplate}
+              required
+              maxLength={200}
               onChange={(value) =>
                 setForm((current) => ({ ...current, emailSubjectTemplate: value }))
               }
@@ -491,6 +521,7 @@ export function SettingsForm({
               label="Cuerpo del email"
               name="emailBodyTemplate"
               value={form.emailBodyTemplate}
+              required
               onChange={(value) =>
                 setForm((current) => ({ ...current, emailBodyTemplate: value }))
               }

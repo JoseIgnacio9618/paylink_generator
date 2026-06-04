@@ -22,7 +22,7 @@ export function getSeedSettings(): Omit<SettingsRecord, "createdAt" | "updatedAt
     merchantDisplayName:
       process.env.MERCHANT_DISPLAY_NAME ?? process.env.APP_NAME ?? "Paylink Generator",
     baseUrl: process.env.APP_BASE_URL ?? "",
-    defaultCurrency: (process.env.DEFAULT_CURRENCY ?? "EUR").toUpperCase(),
+    defaultCurrency: "EUR",
     allowedPaymentMethods: parseMethods(process.env.DEFAULT_ALLOWED_PAYMENT_METHODS),
     moneiApiKey: process.env.MONEI_API_KEY ?? "",
     moneiAccountId: process.env.MONEI_ACCOUNT_ID ?? "",

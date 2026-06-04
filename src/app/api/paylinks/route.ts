@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = createPaylinkInputSchema.safeParse({
       ...body,
-      currency: String(body.currency ?? "").toUpperCase(),
+      currency: "EUR",
     });
 
     if (!parsed.success) {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       title: parsed.data.title,
       description: parsed.data.description,
       amount: parsed.data.amount,
-      currency: parsed.data.currency,
+      currency: "EUR",
       recipientEmail: trimToEmpty(parsed.data.recipientEmail),
       customerName: trimToEmpty(parsed.data.customerName),
       customerEmail: trimToEmpty(parsed.data.customerEmail),

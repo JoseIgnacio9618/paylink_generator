@@ -91,6 +91,7 @@ export async function createPaylinkForOwner(
   input: CreatePaylinkFromInput,
 ): Promise<CreatedPaylinkResult> {
   const amountCents = amountToCents(input.amount);
+  const currency = "EUR";
 
   if (!amountCents || amountCents <= 0) {
     throw new PaylinkCreationError(
@@ -110,7 +111,7 @@ export async function createPaylinkForOwner(
     title: input.title,
     description: input.description,
     amountCents,
-    currency: input.currency,
+    currency,
     customerName: trimToEmpty(input.customerName),
     customerEmail: trimToEmpty(input.customerEmail),
     customerPhone: trimToEmpty(input.customerPhone),
@@ -120,7 +121,7 @@ export async function createPaylinkForOwner(
   if (payment.status === "FAILED") {
     const snapshotForRetry = await getCheckoutSnapshot(settings, {
       amountCents,
-      currency: input.currency,
+      currency,
     }).catch(() => null);
     const fallbackPaymentMethods = (
       snapshotForRetry
@@ -144,7 +145,7 @@ export async function createPaylinkForOwner(
         title: input.title,
         description: input.description,
         amountCents,
-        currency: input.currency,
+        currency,
         customerName: trimToEmpty(input.customerName),
         customerEmail: trimToEmpty(input.customerEmail),
         customerPhone: trimToEmpty(input.customerPhone),
@@ -174,7 +175,7 @@ export async function createPaylinkForOwner(
   const checkoutSnapshot = await getCheckoutSnapshot(settings, {
     paymentId: payment.id,
     amountCents,
-    currency: input.currency,
+    currency,
   }).catch(() => null);
   const resolvedPaymentMethods = checkoutSnapshot?.paymentMethods ?? requestedPaymentMethods;
   const resolvedPaymentMethodLabel =
@@ -188,7 +189,7 @@ export async function createPaylinkForOwner(
       reason: buildOmittedMethodReason({
         method,
         amountCents,
-        currency: input.currency,
+        currency,
         availablePaymentMethods: resolvedPaymentMethods,
         countryCode: checkoutSnapshot?.countryCode ?? "",
         cardLimitTriggered,
@@ -202,7 +203,7 @@ export async function createPaylinkForOwner(
     title: input.title,
     description: input.description,
     amountCents,
-    currency: input.currency,
+    currency,
     recipientEmail: trimToEmpty(input.recipientEmail),
     customerName: trimToEmpty(input.customerName),
     customerEmail: trimToEmpty(input.customerEmail),

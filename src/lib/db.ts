@@ -217,6 +217,8 @@ function initializeDatabase(db: SQLiteDatabase) {
         .run(bootstrapSuperadmin.id);
     }
 
+    db.prepare("UPDATE settings SET default_currency = 'EUR' WHERE id = 1").run();
+
     backfillCheckoutUrls(db);
   });
 

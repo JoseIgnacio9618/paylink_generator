@@ -213,6 +213,17 @@ export function Field({
   labelAction,
   type = "text",
   autoComplete,
+  inputMode,
+  pattern,
+  minLength,
+  maxLength,
+  min,
+  max,
+  step,
+  required,
+  readOnly,
+  disabled,
+  title,
 }: {
   label: string;
   name: string;
@@ -222,6 +233,17 @@ export function Field({
   labelAction?: React.ReactNode;
   type?: React.HTMLInputTypeAttribute;
   autoComplete?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  pattern?: string;
+  minLength?: number;
+  maxLength?: number;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  required?: boolean;
+  readOnly?: boolean;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -235,6 +257,17 @@ export function Field({
         value={value}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        inputMode={inputMode}
+        pattern={pattern}
+        minLength={minLength}
+        maxLength={maxLength}
+        min={min}
+        max={max}
+        step={step}
+        required={required}
+        readOnly={readOnly}
+        disabled={disabled}
+        title={title}
         onChange={(event) => onChange(event.target.value)}
         className={inputClassName}
       />
@@ -248,12 +281,24 @@ export function TextareaField({
   value,
   onChange,
   labelAction,
+  required,
+  maxLength,
+  minLength,
+  placeholder,
+  readOnly,
+  disabled,
 }: {
   label: string;
   name: string;
   value: string;
   onChange: (value: string) => void;
   labelAction?: React.ReactNode;
+  required?: boolean;
+  maxLength?: number;
+  minLength?: number;
+  placeholder?: string;
+  readOnly?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="space-y-2">
@@ -264,6 +309,12 @@ export function TextareaField({
       <textarea
         name={name}
         value={value}
+        required={required}
+        maxLength={maxLength}
+        minLength={minLength}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         className={textAreaClassName}
       />

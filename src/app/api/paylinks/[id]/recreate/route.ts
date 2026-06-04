@@ -42,7 +42,7 @@ export async function POST(_request: Request, context: { params: Params }) {
       title: paylink.title,
       description: paylink.description,
       amount: String(paylink.amountCents / 100),
-      currency: paylink.currency,
+      currency: "EUR",
       recipientEmail: paylink.recipientEmail,
       customerName: paylink.customerName,
       customerEmail: paylink.customerEmail,

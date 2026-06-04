@@ -25,7 +25,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const parsed = settingsInputSchema.safeParse({
       ...body,
-      defaultCurrency: String(body.defaultCurrency ?? "").toUpperCase(),
+      defaultCurrency: "EUR",
       smtpPort: Number(body.smtpPort ?? 0),
       smtpSecure: Boolean(body.smtpSecure),
     });

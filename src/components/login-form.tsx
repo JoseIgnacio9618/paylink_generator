@@ -60,11 +60,23 @@ export function LoginForm() {
       />
 
       <form className="mt-6 space-y-4" onSubmit={submit}>
-        <Field label="Usuario" name="username" value={username} onChange={setUsername} />
+        <Field
+          label="Usuario"
+          name="username"
+          value={username}
+          required
+          autoComplete="username"
+          minLength={3}
+          pattern="^[a-zA-Z0-9._-]+$"
+          title="El usuario solo puede contener letras, números, punto, guion y guion bajo."
+          onChange={setUsername}
+        />
         <Field
           label="Contraseña"
           name="password"
           type="password"
+          required
+          autoComplete="current-password"
           value={password}
           onChange={setPassword}
         />

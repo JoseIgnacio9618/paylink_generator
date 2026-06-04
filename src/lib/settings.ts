@@ -34,7 +34,7 @@ function mapSettingsRow(row: SettingsRow): SettingsRecord {
     appName: row.app_name,
     merchantDisplayName: row.merchant_display_name || row.app_name,
     baseUrl: row.base_url,
-    defaultCurrency: row.default_currency,
+    defaultCurrency: "EUR",
     allowedPaymentMethods: parseJsonArray(row.allowed_payment_methods),
     moneiApiKey: row.monei_api_key,
     moneiAccountId: row.monei_account_id,
@@ -65,6 +65,10 @@ export function getSettings() {
 export function updateSettings(input: Omit<SettingsRecord, "createdAt" | "updatedAt">) {
   const current = getSettings();
   const updatedAt = nowIso();
+  const normalizedInput = {
+    ...input,
+    defaultCurrency: "EUR",
+  };
 
   db.prepare(`
     UPDATE settings
@@ -93,15 +97,15 @@ export function updateSettings(input: Omit<SettingsRecord, "createdAt" | "update
       updated_at = @updatedAt
     WHERE id = 1
   `).run({
-    ...input,
-    allowedPaymentMethods: JSON.stringify(input.allowedPaymentMethods),
-    smtpSecure: input.smtpSecure ? 1 : 0,
+    ...normalizedInput,
+    allowedPaymentMethods: JSON.stringify(normalizedInput.allowedPaymentMethods),
+    smtpSecure: normalizedInput.smtpSecure ? 1 : 0,
     updatedAt,
   });
 
   return {
     ...current,
-    ...input,
+    ...normalizedInput,
     updatedAt,
   };
 }

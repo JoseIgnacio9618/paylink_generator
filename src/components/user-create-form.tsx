@@ -105,12 +105,19 @@ export function UserCreateForm() {
             label="Usuario"
             name="username"
             value={form.username}
+            required
+            autoComplete="username"
+            minLength={3}
+            pattern="^[a-zA-Z0-9._-]+$"
+            title="El usuario solo puede contener letras, números, punto, guion y guion bajo."
             onChange={(value) => setForm((current) => ({ ...current, username: value }))}
           />
           <Field
             label="Nombre visible"
             name="displayName"
             value={form.displayName}
+            required
+            maxLength={120}
             onChange={(value) => setForm((current) => ({ ...current, displayName: value }))}
           />
         </div>
@@ -120,7 +127,9 @@ export function UserCreateForm() {
             label="Contraseña"
             name="password"
             type="password"
+            required
             autoComplete="new-password"
+            minLength={8}
             value={form.password}
             onChange={(value) => setForm((current) => ({ ...current, password: value }))}
           />
@@ -128,7 +137,9 @@ export function UserCreateForm() {
             label="Repetir contraseña"
             name="confirmPassword"
             type="password"
+            required
             autoComplete="new-password"
+            minLength={8}
             value={form.confirmPassword}
             onChange={(value) => setForm((current) => ({ ...current, confirmPassword: value }))}
           />

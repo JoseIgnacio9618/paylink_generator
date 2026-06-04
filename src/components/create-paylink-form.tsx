@@ -131,6 +131,8 @@ export function CreatePaylinkForm({
             label="Título"
             name="title"
             value={form.title}
+            required
+            maxLength={120}
             onChange={(value) => setForm((current) => ({ ...current, title: value }))}
           />
           <Field
@@ -138,6 +140,10 @@ export function CreatePaylinkForm({
             name="amount"
             placeholder="49.90"
             value={form.amount}
+            required
+            inputMode="decimal"
+            pattern="^\d+([.,]\d{1,2})?$"
+            title="Introduce un importe válido con hasta 2 decimales."
             onChange={(value) => setForm((current) => ({ ...current, amount: value }))}
           />
         </div>
@@ -147,26 +153,24 @@ export function CreatePaylinkForm({
             label="Descripción"
             name="description"
             value={form.description}
+            maxLength={500}
             onChange={(value) => setForm((current) => ({ ...current, description: value }))}
           />
-          <Field
-            label="Moneda"
-            name="currency"
-            placeholder="EUR"
-            value={form.currency}
-            labelAction={
-              accountSnapshot ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <Label text="Moneda" />
+              {accountSnapshot ? (
                 <InfoPopover title="Checkout en MONEI">
                   <p>
                     La disponibilidad final de los métodos se recalcula al crear el checkout y puede variar según el importe, la moneda o el país.
                   </p>
                 </InfoPopover>
-              ) : null
-            }
-            onChange={(value) =>
-              setForm((current) => ({ ...current, currency: value.toUpperCase() }))
-            }
-          />
+              ) : null}
+            </div>
+            <div className="flex h-[54px] items-center rounded-[1.35rem] border border-border/80 bg-surface/96 px-4 text-sm font-semibold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_14px_30px_rgba(58,44,34,0.08)] dark:bg-background/65">
+              EUR
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -175,6 +179,8 @@ export function CreatePaylinkForm({
             name="recipientEmail"
             placeholder="alertas@tuempresa.com"
             value={form.recipientEmail}
+            type="email"
+            autoComplete="email"
             onChange={(value) =>
               setForm((current) => ({ ...current, recipientEmail: value }))
             }
@@ -184,6 +190,8 @@ export function CreatePaylinkForm({
             name="customerEmail"
             placeholder="cliente@ejemplo.com"
             value={form.customerEmail}
+            type="email"
+            autoComplete="email"
             onChange={(value) =>
               setForm((current) => ({ ...current, customerEmail: value }))
             }
@@ -195,6 +203,7 @@ export function CreatePaylinkForm({
             label="Nombre del cliente"
             name="customerName"
             value={form.customerName}
+            maxLength={120}
             onChange={(value) =>
               setForm((current) => ({ ...current, customerName: value }))
             }
@@ -204,6 +213,11 @@ export function CreatePaylinkForm({
             name="customerPhone"
             placeholder="+34600000000"
             value={form.customerPhone}
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            pattern="^[+()\-\\d\\s]{6,20}$"
+            title="Introduce un teléfono válido."
             onChange={(value) =>
               setForm((current) => ({ ...current, customerPhone: value }))
             }
