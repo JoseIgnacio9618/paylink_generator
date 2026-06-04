@@ -483,7 +483,7 @@ export function PaylinksTable({
                 Estado actual: <strong className="text-foreground">{refundDialog.status}</strong>
               </p>
               {refundDialog.refundedAmountCents > 0 ? (
-                <div className="rounded-[1.2rem] border border-sky-200/80 bg-sky-50/92 px-4 py-3 text-sky-900">
+                <div className="rounded-[1.2rem] border border-sky-200/80 bg-sky-50/92 px-4 py-3 text-sky-900 dark:border-sky-800/70 dark:bg-sky-950/35 dark:text-sky-100">
                   <p>
                     Ya reembolsado:{" "}
                     <strong className="text-foreground">
@@ -553,11 +553,11 @@ export function PaylinksTable({
                 </label>
               </div>
               {refundDialogError ? (
-                <p className="rounded-[1.2rem] border border-rose-200/80 bg-rose-50/92 px-4 py-3 text-rose-900">
+                <p className="rounded-[1.2rem] border border-rose-200/80 bg-rose-50/92 px-4 py-3 text-rose-900 dark:border-rose-800/70 dark:bg-rose-950/35 dark:text-rose-100">
                   {refundDialogError}
                 </p>
               ) : null}
-              <p className="rounded-[1.2rem] border border-rose-200/80 bg-rose-50/92 px-4 py-3 text-rose-900">
+              <p className="rounded-[1.2rem] border border-rose-200/80 bg-rose-50/92 px-4 py-3 text-rose-900 dark:border-rose-800/70 dark:bg-rose-950/35 dark:text-rose-100">
                 Esta operación no se puede deshacer desde esta aplicación. Antes de continuar,
                 confirma que realmente quieres devolver este pago. Si ya existe un reembolso
                 parcial, se devolverá únicamente el importe pendiente.
