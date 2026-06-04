@@ -36,6 +36,40 @@ Para esta app:
 - `MONEI_API_KEY` debe ser la clave del modo que estes usando.
 - `MONEI_ACCOUNT_ID` es opcional en este proyecto y solo hace falta en escenarios avanzados de cuentas conectadas o trabajo "on behalf of".
 
+### 1.3 Como llega el dinero de MONEI a tu cuenta bancaria
+
+Es importante distinguir tres cosas distintas:
+
+- `charge`: el cliente te paga;
+- `refund`: devuelves total o parcialmente un pago al cliente;
+- `settlement`: MONEI liquida saldo de comerciante y lo transfiere a tu cuenta bancaria.
+
+En el flujo normal de este proyecto, esta app:
+
+- crea cobros en MONEI;
+- recibe el webhook del pago;
+- puede consultar estados;
+- y puede solicitar refunds.
+
+Pero esta app **no inicia una retirada manual a tu banco**. Lo que ocurre, segun la documentacion publica de MONEI revisada el `2026-06-04`, es que las liquidaciones se envian al `IBAN` configurado en tu cuenta de comerciante. MONEI documenta que una liquidacion con estado `COMPLETED` produce una unica transferencia bancaria al `iban` de destino.
+
+Consecuencia practica:
+
+- para "sacar el dinero" a tu banco no usas esta app;
+- debes tener correctamente configurado en MONEI el `IBAN` de liquidacion de tu cuenta;
+- y despues esperar la liquidacion normal de MONEI.
+
+Si quieres comprobar que ya se ha enviado al banco, la referencia tecnica correcta en MONEI no es un `refund`, sino una `settlement`:
+
+- `SETTLEMENT_PENDING` indica liquidacion pendiente;
+- `SETTLEMENT_COMPLETED` indica que la liquidacion ya se ha transferido a la cuenta bancaria del comercio.
+
+Importante:
+
+- esto no es lo mismo que la API `PAYOUT`;
+- `PAYOUT` en MONEI sirve para enviar dinero a terceros por Bizum o tarjeta y, segun la documentacion oficial, sigue en beta cerrada;
+- no es el mecanismo normal para retirar tus propios cobros a tu cuenta bancaria.
+
 ## 2. URLs publicas y webhook
 
 ### 2.1 Base URL publica
@@ -197,6 +231,24 @@ Recomendacion:
 - no dejes `DEFAULT_ALLOWED_PAYMENT_METHODS` con metodos "aspiracionales";
 - guarda solo los que ya existan en tu cuenta live o test;
 - el alta de metodos adicionales debe hacerse primero en MONEI.
+
+## 4.1 Resumen operativo sobre banco y liquidaciones
+
+Si tu duda operativa es "como cobro yo ese dinero en mi banco", el flujo correcto es este:
+
+1. El cliente paga en MONEI.
+2. MONEI marca el pago como cobrado.
+3. MONEI agrupa operaciones en una `settlement`.
+4. Cuando la liquidacion queda `COMPLETED`, MONEI envia una transferencia bancaria al `IBAN` configurado para esa cuenta.
+
+Por tanto, antes de salir a produccion conviene revisar en tu cuenta MONEI:
+
+- que el `IBAN` de liquidacion sea el correcto;
+- que la cuenta live este aprobada;
+- que no haya bloqueos operativos o de cumplimiento;
+- y que puedas ver eventos o movimientos de tipo `settlement`.
+
+Si necesitas enviar dinero activamente a otra persona o empresa, eso ya no es una liquidacion de comerciante sino un `PAYOUT`, y entra en otro producto distinto.
 
 ## 5. Como trabaja esta app con los metodos de pago
 
@@ -379,6 +431,9 @@ Por eso la regla correcta de producto es esta:
 ## 9. Fuentes oficiales
 
 - [MONEI Payment Methods API](https://docs.monei.com/apis/rest/payment-methods/)
+- [MONEI AccountSettlement](https://docs.monei.com/es/apis/graphql/types/objects/account-settlement/)
+- [MONEI Webhook Event Types](https://docs.monei.com/apis/graphql/types/enums/webhook-event-type/)
+- [MONEI Payouts beta](https://docs.monei.com/es/guides/payouts/)
 - [MONEI Cards](https://docs.monei.com/payment-methods/card/)
 - [MONEI Bizum](https://docs.monei.com/payment-methods/bizum/)
 - [MONEI PayPal](https://docs.monei.com/payment-methods/paypal/)

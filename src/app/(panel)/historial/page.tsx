@@ -32,7 +32,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       description={`${getPaylinkScopeDescription(currentUser)} Puedes abrir, copiar y sincronizar pagos desde aquí.`}
       headerMode="none"
     >
-      <PaylinksTable paylinks={paylinks} />
+      <PaylinksTable paylinks={paylinks} canManageRefunds={currentUser.role === "superadmin"} />
     </PageFrame>
   );
 }

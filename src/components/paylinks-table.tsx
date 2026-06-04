@@ -4,6 +4,7 @@ import { startTransition, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { StatusBadge } from "@/components/status-badge";
 import {
+  dangerButtonClassName,
   NoticeBanner,
   primaryButtonClassName,
   SectionCard,
@@ -21,7 +22,22 @@ type Notice = {
   text: string;
 } | null;
 
-export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult }) {
+type RefundDialogState = {
+  id: string;
+  title: string;
+  amountLabel: string;
+  status: string;
+};
+
+const REFUNDABLE_STATUSES = new Set(["SUCCEEDED", "PARTIALLY_REFUNDED"]);
+
+export function PaylinksTable({
+  paylinks,
+  canManageRefunds,
+}: {
+  paylinks: PaginatedPaylinksResult;
+  canManageRefunds: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -29,6 +45,8 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [copyingId, setCopyingId] = useState<string | null>(null);
   const [recreatingId, setRecreatingId] = useState<string | null>(null);
+  const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [refundDialog, setRefundDialog] = useState<RefundDialogState | null>(null);
 
   async function syncPaylink(id: string) {
     setSyncingId(id);
@@ -76,6 +94,37 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
       });
     } finally {
       setRecreatingId(null);
+    }
+  }
+
+  async function confirmRefund() {
+    if (!refundDialog) {
+      return;
+    }
+
+    setRefundingId(refundDialog.id);
+
+    try {
+      const response = await fetch(`/api/paylinks/${refundDialog.id}/refund`, { method: "POST" });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "No se pudo tramitar el reembolso.");
+      }
+
+      setNotice({
+        tone: "success",
+        text: "Reembolso solicitado correctamente en MONEI.",
+      });
+      setRefundDialog(null);
+      startTransition(() => router.refresh());
+    } catch (error) {
+      setNotice({
+        tone: "error",
+        text: error instanceof Error ? error.message : "No se pudo tramitar el reembolso.",
+      });
+    } finally {
+      setRefundingId(null);
     }
   }
 
@@ -216,6 +265,8 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                 paylinks.items.map((paylink) => {
                   const canOpenCurrentCheckout = canOpenCheckout(paylink);
                   const canRecreateCurrentPaylink = canRecreatePaylink(paylink);
+                  const canRefundCurrentPaylink =
+                    canManageRefunds && REFUNDABLE_STATUSES.has(paylink.moneiStatus);
                   const customerDetails = [
                     paylink.customerName ? `Cliente: ${paylink.customerName}` : null,
                     paylink.customerPhone ? `Tel: ${paylink.customerPhone}` : null,
@@ -318,6 +369,27 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
                           >
                             {syncingId === paylink.id ? "Sincronizando..." : "Sincronizar"}
                           </button>
+                          {canRefundCurrentPaylink ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRefundDialog({
+                                  id: paylink.id,
+                                  title: paylink.title,
+                                  amountLabel: formatCurrency(paylink.amountCents, paylink.currency),
+                                  status: paylink.moneiStatus,
+                                })
+                              }
+                              disabled={refundingId === paylink.id}
+                              className={cn(dangerButtonClassName, "rounded-[1rem] px-3 py-2 text-sm")}
+                            >
+                              {refundingId === paylink.id
+                                ? "Reembolsando..."
+                                : paylink.moneiStatus === "PARTIALLY_REFUNDED"
+                                  ? "Reembolsar restante"
+                                  : "Reembolsar pago"}
+                            </button>
+                          ) : null}
                           {!canOpenCurrentCheckout ? (
                             <p className="text-xs leading-5 text-muted">
                               {canRecreateCurrentPaylink
@@ -344,6 +416,57 @@ export function PaylinksTable({ paylinks }: { paylinks: PaginatedPaylinksResult 
           Página siguiente
         </button>
       </div>
+
+      {refundDialog ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/42 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-[2rem] border border-rose-200/80 bg-surface/98 p-6 shadow-[0_30px_60px_rgba(58,44,34,0.18)]">
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-rose-700">
+              Acción sensible
+            </p>
+            <h3 className="mt-3 font-[family:var(--font-display)] text-3xl font-semibold tracking-[-0.04em] text-foreground">
+              Confirmar reembolso
+            </h3>
+            <div className="mt-5 space-y-3 text-sm leading-6 text-muted">
+              <p>
+                Vas a solicitar a MONEI el reembolso del importe pendiente de este cobro.
+              </p>
+              <p>
+                Concepto: <strong className="text-foreground">{refundDialog.title}</strong>
+              </p>
+              <p>
+                Importe original: <strong className="text-foreground">{refundDialog.amountLabel}</strong>
+              </p>
+              <p>
+                Estado actual: <strong className="text-foreground">{refundDialog.status}</strong>
+              </p>
+              <p className="rounded-[1.2rem] border border-rose-200/80 bg-rose-50/92 px-4 py-3 text-rose-900">
+                Esta operación no se puede deshacer desde esta aplicación. Antes de continuar,
+                confirma que realmente quieres devolver este pago. Si ya existe un reembolso
+                parcial, se devolverá únicamente el importe pendiente.
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setRefundDialog(null)}
+                disabled={refundingId === refundDialog.id}
+                className={secondaryButtonClassName}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmRefund}
+                disabled={refundingId === refundDialog.id}
+                className={dangerButtonClassName}
+              >
+                {refundingId === refundDialog.id ? "Procesando..." : "Confirmar reembolso"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </SectionCard>
   );
 }

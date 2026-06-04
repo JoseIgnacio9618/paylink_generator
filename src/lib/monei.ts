@@ -100,6 +100,17 @@ export async function fetchPaymentStatus(settings: SettingsRecord, paymentId: st
   return getClient(settings).payments.get(paymentId);
 }
 
+export async function refundPayment(
+  settings: SettingsRecord,
+  paymentId: string,
+  input?: {
+    amount?: number;
+    refundReason?: "duplicated" | "fraudulent" | "requested_by_customer";
+  },
+) {
+  return getClient(settings).payments.refund(paymentId, input);
+}
+
 export async function getCheckoutSnapshot(
   settings: SettingsRecord,
   input?: {
