@@ -1,87 +1,87 @@
 # Paylink Generator
 
-Aplicación Next.js para crear links de pago con MONEI, guardar toda la operativa en SQLite y disparar correos cuando el pago se confirma.
+A Next.js application for creating MONEI payment links, storing all operations in SQLite, and sending emails when a payment is confirmed.
 
-## Qué hace
+## What It Does
 
-- Crea pagos hosted de MONEI a partir de título, descripción y precio.
-- Guarda configuración, links, estados y eventos en `SQLite` (`data/paylink.sqlite`).
-- Usa el webhook de MONEI como fuente de verdad para marcar si un pago está cobrado o no.
-- Envía un email al destinatario adicional del link y a un email estándar configurable.
-- Permite editar la configuración desde la propia interfaz.
+* Creates MONEI hosted payments from a title, description, and price.
+* Stores settings, payment links, statuses, and events in `SQLite` (`data/paylink.sqlite`).
+* Uses the MONEI webhook as the source of truth to determine whether a payment has been successfully completed.
+* Sends an email to the additional recipient specified for the payment link and to a configurable default email address.
+* Allows settings to be edited directly from the user interface.
 
-## Puesta en marcha
+## Getting Started
 
-1. Instala dependencias:
+1. Install the dependencies:
 
 ```bash
 npm install
 ```
 
-2. Crea tu entorno:
+2. Create your environment file:
 
 ```bash
 cp .env.example .env.local
 ```
 
-3. Completa al menos:
+3. Configure at least the following variables:
 
-- `APP_BASE_URL`
-- `MONEI_API_KEY`
-- `DEFAULT_NOTIFICATION_EMAIL`
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_FROM`
+* `APP_BASE_URL`
+* `MONEI_API_KEY`
+* `DEFAULT_NOTIFICATION_EMAIL`
+* `SMTP_HOST`
+* `SMTP_PORT`
+* `SMTP_FROM`
 
-4. Arranca en local:
+4. Start the application locally:
 
 ```bash
 npm run start
 ```
 
-Ese comando levanta `next dev` bajo `nodemon` en `http://localhost:3000`.
+This command starts `next dev` through `nodemon` at `http://localhost:3000`.
 
-Si solo quieres arrancar Next sin túnel:
+To start Next.js without the tunnel:
 
 ```bash
 npm run dev
 ```
 
-## Flujo MONEI implementado
+## Implemented MONEI Flow
 
-- Se crea un `payment` vía `POST /payments`.
-- La app usa `payment.nextAction.redirectUrl` como link de pago compartible.
-- El webhook llega a `/api/monei/webhook`.
-- La firma `MONEI-Signature` se verifica con HMAC SHA-256 usando la API key.
-- El estado definitivo se persiste en SQLite y, si pasa a `SUCCEEDED`, se intenta enviar el correo.
+* A `payment` is created through `POST /payments`.
+* The application uses `payment.nextAction.redirectUrl` as the shareable payment link.
+* The webhook is received at `/api/monei/webhook`.
+* The `MONEI-Signature` header is verified using HMAC SHA-256 with the API key.
+* The final payment status is stored in SQLite and, when it changes to `SUCCEEDED`, the application attempts to send the notification email.
 
-## Variables de entorno
+## Environment Variables
 
-Los valores del `.env` se usan como semilla inicial en la tabla `settings`. Después puedes cambiarlos desde la UI.
+The values from the `.env` file are used as the initial seed data for the `settings` table. They can later be changed from the user interface.
 
-- `APP_NAME`
-- `MERCHANT_DISPLAY_NAME`
-- `APP_BASE_URL`
-- `DEFAULT_CURRENCY`
-- `DEFAULT_ALLOWED_PAYMENT_METHODS`
-- `MONEI_API_KEY`
-- `MONEI_ACCOUNT_ID`
-- `MONEI_CALLBACK_PATH`
-- `MONEI_COMPLETE_URL`
-- `MONEI_FAIL_URL`
-- `MONEI_CANCEL_URL`
-- `DEFAULT_NOTIFICATION_EMAIL`
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_SECURE`
-- `SMTP_USER`
-- `SMTP_PASS`
-- `SMTP_FROM`
-- `SMTP_FROM_NAME`
-- `EMAIL_SUBJECT_TEMPLATE`
+* `APP_NAME`
+* `MERCHANT_DISPLAY_NAME`
+* `APP_BASE_URL`
+* `DEFAULT_CURRENCY`
+* `DEFAULT_ALLOWED_PAYMENT_METHODS`
+* `MONEI_API_KEY`
+* `MONEI_ACCOUNT_ID`
+* `MONEI_CALLBACK_PATH`
+* `MONEI_COMPLETE_URL`
+* `MONEI_FAIL_URL`
+* `MONEI_CANCEL_URL`
+* `DEFAULT_NOTIFICATION_EMAIL`
+* `SMTP_HOST`
+* `SMTP_PORT`
+* `SMTP_SECURE`
+* `SMTP_USER`
+* `SMTP_PASS`
+* `SMTP_FROM`
+* `SMTP_FROM_NAME`
+* `EMAIL_SUBJECT_TEMPLATE`
 
-## Notas
+## Notes
 
-- Si `Base URL` no está bien configurada, MONEI no podrá llamar al webhook.
-- Si el SMTP está incompleto, el pago se registrará igualmente pero el email no saldrá.
-- Se asume que “Microsoft SQL Lite” en realidad era `SQLite`, porque es la base embebida estándar en este escenario.
+* If the `Base URL` is not configured correctly, MONEI will not be able to call the webhook.
+* If the SMTP configuration is incomplete, the payment will still be recorded, but the email will not be sent.
+* It is assumed that “Microsoft SQL Lite” actually referred to `SQLite`, as it is the standard embedded database for this type of application.
