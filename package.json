@@ -3,12 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.mjs --dev",
     "build": "next build",
-    "start": "npm run start:app",
-    "start:app": "nodemon --watch src --watch package.json --watch next.config.ts --watch postcss.config.mjs --watch eslint.config.mjs --ext ts,tsx,js,jsx,mjs,json,css --signal SIGTERM --exec \"next dev --port 3000\"",
-    "start:dev": "npm run start",
-    "start:prod": "next start",
+    "start": "node server.mjs",
+    "start:dev": "node server.mjs --dev",
+    "start:prod": "node server.mjs",
     "lint": "eslint"
   },
   "dependencies": {

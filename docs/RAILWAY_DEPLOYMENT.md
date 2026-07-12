@@ -42,6 +42,14 @@ SMTP_PORT=587
 SMTP_FROM=pagos@tu-dominio.com
 ```
 
+## Endpoint WebSocket de estado
+
+La aplicación expone un WebSocket en `/status`, disponible en la URL pública
+del servicio; por ejemplo, `wss://tu-dominio-publico.up.railway.app/status`.
+
+No hace falta configurar un puerto adicional ni una variable para el socket:
+Railway publica el mismo `PORT` de la aplicación y admite el upgrade WebSocket.
+
 ## Notas para SQLite
 
 - La base se guarda en `paylink.sqlite` dentro del directorio de datos.
