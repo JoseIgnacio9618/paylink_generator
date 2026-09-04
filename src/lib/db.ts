@@ -25,7 +25,9 @@ function getSql() {
       // timeout keeps the React server stream open and leaves the UI on its
       // navigation loading screen after authentication.
       idle_timeout: 1,
-      max: 1,
+      // App Router renders layouts and pages concurrently. Keep a small pool
+      // so session, settings and page queries do not wait behind one another.
+      max: 5,
       prepare: false,
     });
   }
