@@ -1,11 +1,27 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createPaylinkForOwner, PaylinkCreationError } from "@/lib/paylink-creation";
+import { listPaylinks } from "@/lib/paylinks";
 import { getSettings } from "@/lib/settings";
+import { getVisiblePaylinkOwnerIds } from "@/lib/users";
 import { trimToEmpty } from "@/lib/utils";
 import { createPaylinkInputSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
+
+export async function GET() {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
+  }
+
+  const paylinks = await listPaylinks({
+    ownerUserIds: getVisiblePaylinkOwnerIds(currentUser),
+  });
+
+  return NextResponse.json({ paylinks });
+}
 
 export async function POST(request: Request) {
   try {
