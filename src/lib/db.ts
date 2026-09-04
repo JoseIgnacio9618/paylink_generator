@@ -21,7 +21,10 @@ function getSql() {
 
     globalForDatabase.__paylinkSql = postgres(connectionString, {
       connect_timeout: 10,
-      idle_timeout: 20,
+      // Serverless page rendering must release idle sockets promptly. A long
+      // timeout keeps the React server stream open and leaves the UI on its
+      // navigation loading screen after authentication.
+      idle_timeout: 1,
       max: 1,
       prepare: false,
     });
