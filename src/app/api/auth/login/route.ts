@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = authenticateUser(parsed.data.username, parsed.data.password);
+    const user = await authenticateUser(parsed.data.username, parsed.data.password);
 
     if (!user) {
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         role: user.role,
       },
     });
-    setUserSessionCookie(response, user);
+    await setUserSessionCookie(response, user);
 
     return response;
   } catch (error) {

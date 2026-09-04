@@ -16,7 +16,7 @@ export async function GET() {
     return NextResponse.json({ error: "Acceso denegado." }, { status: 403 });
   }
 
-  return NextResponse.json({ users: listUsers() });
+  return NextResponse.json({ users: await listUsers() });
 }
 
 export async function POST(request: Request) {
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = createUser({
+    const user = await createUser({
       username: parsed.data.username,
       displayName: parsed.data.displayName,
       password: parsed.data.password,

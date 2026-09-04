@@ -22,22 +22,22 @@ export async function POST(_request: Request, context: { params: Params }) {
     }
 
     const { id } = await context.params;
-    const paylink = getPaylinkById(id, getVisiblePaylinkOwnerIds(currentUser));
+    const paylink = await getPaylinkById(id, getVisiblePaylinkOwnerIds(currentUser));
 
     if (!paylink) {
       return NextResponse.json({ error: "Paylink no encontrado." }, { status: 404 });
     }
 
-    const settings = getSettings();
+    const settings = await getSettings();
     const payment = await fetchPaymentStatus(settings, paylink.moneiPaymentId);
-    const updatedPaylink = applyPaymentUpdate(id, payment, "manual_sync");
+    const updatedPaylink = await applyPaymentUpdate(id, payment, "manual_sync");
 
     if (payment.status === "SUCCEEDED" && !updatedPaylink.notificationSentAt) {
-      queuePaymentSuccessNotification(settings, updatedPaylink, payment);
+      await queuePaymentSuccessNotification(settings, updatedPaylink, payment);
     }
 
     return NextResponse.json({
-      paylink: getPaylinkById(id, getVisiblePaylinkOwnerIds(currentUser)),
+      paylink: await getPaylinkById(id, getVisiblePaylinkOwnerIds(currentUser)),
     });
   } catch (error) {
     return NextResponse.json(

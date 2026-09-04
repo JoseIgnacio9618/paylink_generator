@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await createPaylinkForOwner(getSettings(), {
+    const result = await createPaylinkForOwner(await getSettings(), {
       ownerUserId: currentUser.id,
       title: parsed.data.title,
       description: parsed.data.description,

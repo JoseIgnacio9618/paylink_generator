@@ -18,7 +18,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
   const currentUser = await requireAuthenticatedUser();
   const params = await searchParams;
   const visibleOwnerUserIds = getVisiblePaylinkOwnerIds(currentUser);
-  const paylinks = searchPaylinks({
+  const paylinks = await searchPaylinks({
     query: params.q,
     page: Number(params.page ?? "1"),
     pageSize: Number(params.pageSize ?? "25"),

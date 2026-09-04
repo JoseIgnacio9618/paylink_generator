@@ -19,7 +19,7 @@ export async function POST(_request: Request, context: { params: Params }) {
     }
 
     const { id } = await context.params;
-    const paylink = getPaylinkById(id, getVisiblePaylinkOwnerIds(currentUser));
+    const paylink = await getPaylinkById(id, getVisiblePaylinkOwnerIds(currentUser));
 
     if (!paylink) {
       return NextResponse.json({ error: "Paylink no encontrado." }, { status: 404 });
@@ -37,7 +37,7 @@ export async function POST(_request: Request, context: { params: Params }) {
       );
     }
 
-    const result = await createPaylinkForOwner(getSettings(), {
+    const result = await createPaylinkForOwner(await getSettings(), {
       ownerUserId: paylink.ownerUserId,
       title: paylink.title,
       description: paylink.description,

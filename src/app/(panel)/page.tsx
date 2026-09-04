@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const currentUser = await requireAuthenticatedUser();
-  const settings = getSettings();
-  const paylinks = listPaylinks({ ownerUserIds: getVisiblePaylinkOwnerIds(currentUser) });
+  const settings = await getSettings();
+  const paylinks = await listPaylinks({ ownerUserIds: getVisiblePaylinkOwnerIds(currentUser) });
   const warnings =
     currentUser.role === "superadmin" ? getConfigurationWarnings(settings) : [];
 

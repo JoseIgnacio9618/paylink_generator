@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NewPaylinkPage() {
   await requireAuthenticatedUser();
-  const settings = getSettings();
+  const settings = await getSettings();
   const accountSnapshot = settings.moneiApiKey
     ? await getCheckoutSnapshot(settings).catch(() => null)
     : null;

@@ -196,7 +196,7 @@ export async function createPaylinkForOwner(
       }),
     }));
 
-  const paylink = insertPaylink({
+  const paylink = await insertPaylink({
     id: localPaylinkId,
     ownerUserId: input.ownerUserId,
     orderId,

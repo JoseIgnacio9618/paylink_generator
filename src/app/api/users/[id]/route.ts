@@ -43,7 +43,7 @@ export async function PATCH(request: Request, context: { params: Params }) {
       );
     }
 
-    const user = updateUser(id, {
+    const user = await updateUser(id, {
       username: parsed.data.username,
       displayName: parsed.data.displayName,
       password: parsed.data.password || undefined,
@@ -82,7 +82,7 @@ export async function DELETE(_request: Request, context: { params: Params }) {
       );
     }
 
-    deleteUser(id);
+    await deleteUser(id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(

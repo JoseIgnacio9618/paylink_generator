@@ -12,7 +12,7 @@ type ExistingUsersPageProps = {
 export default async function ExistingUsersPage({ searchParams }: ExistingUsersPageProps) {
   await requireSuperadminUser();
   const params = await searchParams;
-  const users = listUsersPaginated({
+  const users = await listUsersPaginated({
     page: Number(params.page ?? "1"),
     pageSize: Number(params.pageSize ?? "10"),
   });

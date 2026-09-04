@@ -10,13 +10,13 @@ type UserEditPageProps = {
 export default async function UserEditPage({ params }: UserEditPageProps) {
   const currentUser = await requireSuperadminUser();
   const { id } = await params;
-  const user = getUserById(id);
+  const user = await getUserById(id);
 
   if (!user) {
     notFound();
   }
 
-  const userSummary = getUserSummaryById(id);
+  const userSummary = await getUserSummaryById(id);
 
   return <UserEditForm user={user} userSummary={userSummary} currentUserId={currentUser.id} />;
 }

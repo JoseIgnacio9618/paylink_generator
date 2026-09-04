@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { paymentFromWebhook, verifyWebhookSignature } from "@/lib/monei";
-import { queuePaymentSuccessNotification } from "@/lib/notification-jobs";
+import { processPendingNotificationJobs, queuePaymentSuccessNotification } from "@/lib/notification-jobs";
 import {
   applyPaymentUpdate,
   getPaylinkByMoneiPaymentId,
@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const startedAt = Date.now();
   const rawBody = await request.text();
-  const settings = getSettings();
+  const settings = await getSettings();
   const signature = request.headers.get("MONEI-Signature");
 
   if (!signature) {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   try {
     const payment = paymentFromWebhook(rawBody);
-    const paylink = getPaylinkByMoneiPaymentId(payment.id);
+    const paylink = await getPaylinkByMoneiPaymentId(payment.id);
 
     if (!paylink) {
       console.info("MONEI webhook ignored: payment not found.", {
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, ignored: true });
     }
 
-    const updatedPaylink = applyPaymentUpdate(paylink.id, payment, "webhook");
+    const updatedPaylink = await applyPaymentUpdate(paylink.id, payment, "webhook");
     console.info("MONEI webhook applied.", {
       paymentId: payment.id,
       paylinkId: paylink.id,
@@ -52,7 +52,8 @@ export async function POST(request: Request) {
     });
 
     if (payment.status === "SUCCEEDED" && !updatedPaylink.notificationSentAt) {
-      queuePaymentSuccessNotification(settings, updatedPaylink, payment);
+      await queuePaymentSuccessNotification(settings, updatedPaylink, payment);
+      await processPendingNotificationJobs();
       console.info("MONEI webhook email queued.", {
         paymentId: payment.id,
         paylinkId: paylink.id,

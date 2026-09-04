@@ -47,8 +47,8 @@ export async function requireSuperadminUser() {
   return user;
 }
 
-export function setUserSessionCookie(response: NextResponse, user: UserRecord) {
-  const session = createUserSession(user.id);
+export async function setUserSessionCookie(response: NextResponse, user: UserRecord) {
+  const session = await createUserSession(user.id);
 
   response.cookies.set(
     SESSION_COOKIE_NAME,
@@ -64,7 +64,7 @@ export async function clearCurrentSessionCookie(response: NextResponse) {
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   if (token) {
-    deleteSessionByToken(token);
+    await deleteSessionByToken(token);
   }
 
   response.cookies.set(SESSION_COOKIE_NAME, "", {

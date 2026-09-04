@@ -10,7 +10,7 @@ export default async function PanelLayout({
   children: React.ReactNode;
 }>) {
   const currentUser = await requireAuthenticatedUser();
-  const settings = getSettings();
+  const settings = await getSettings();
 
   return (
     <AppShell appName={settings.appName} currentUser={currentUser}>

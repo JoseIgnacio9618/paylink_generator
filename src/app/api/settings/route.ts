@@ -21,7 +21,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const currentSettings = getSettings();
+    const currentSettings = await getSettings();
     const body = await request.json();
     const parsed = settingsInputSchema.safeParse({
       ...body,
@@ -45,7 +45,7 @@ export async function PATCH(request: Request) {
       await syncMerchantDisplayName(parsed.data);
     }
 
-    const settings = updateSettings(parsed.data);
+    const settings = await updateSettings(parsed.data);
     return NextResponse.json({ settings });
   } catch (error) {
     return NextResponse.json(

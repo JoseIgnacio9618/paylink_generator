@@ -55,13 +55,13 @@ export async function POST(request: Request, context: { params: Params }) {
     }
 
     const { id } = await context.params;
-    const paylink = getPaylinkById(id);
+    const paylink = await getPaylinkById(id);
 
     if (!paylink) {
       return NextResponse.json({ error: "Paylink no encontrado." }, { status: 404 });
     }
 
-    const settings = getSettings();
+    const settings = await getSettings();
     const payment = await fetchPaymentStatus(settings, paylink.moneiPaymentId);
 
     if (!REFUNDABLE_STATUSES.has(payment.status ?? "")) {
@@ -100,7 +100,7 @@ export async function POST(request: Request, context: { params: Params }) {
       refundReason: "requested_by_customer",
     });
 
-    const updatedPaylink = applyPaymentUpdate(id, refundedPayment, "manual_refund");
+    const updatedPaylink = await applyPaymentUpdate(id, refundedPayment, "manual_refund");
 
     console.info("Manual refund applied.", {
       paylinkId: paylink.id,
