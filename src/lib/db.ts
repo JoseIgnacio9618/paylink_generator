@@ -56,6 +56,15 @@ export async function execute(statement: string, values: QueryValue[] = []) {
 }
 
 export async function initializeDatabase() {
+  // The production schema is migrated before deployment. Running the complete
+  // bootstrap DDL from every fresh Vercel function delays React's server
+  // stream and leaves panel routes permanently in their loading boundary.
+  // Keep automatic bootstrap for local development, or enable it explicitly
+  // for a new empty environment.
+  if (process.env.VERCEL && process.env.PAYLINK_AUTO_MIGRATE !== "true") {
+    return;
+  }
+
   if (!globalForDatabase.__paylinkDatabaseInitialization) {
     globalForDatabase.__paylinkDatabaseInitialization = initializeDatabaseOnce();
   }
