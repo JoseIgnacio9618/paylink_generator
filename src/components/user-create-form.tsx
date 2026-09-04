@@ -108,7 +108,7 @@ export function UserCreateForm() {
             required
             autoComplete="username"
             minLength={3}
-            pattern="^[a-zA-Z0-9._-]+$"
+            pattern="^(?:[a-zA-Z0-9._]|-)+$"
             title="El usuario solo puede contener letras, números, punto, guion y guion bajo."
             onChange={(value) => setForm((current) => ({ ...current, username: value }))}
           />
